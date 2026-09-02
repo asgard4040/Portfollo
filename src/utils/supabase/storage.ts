@@ -1,6 +1,7 @@
 import { supabase } from './client'
 
 const BUCKET = 'images'
+const BUCKET_URL = `https://btuejeztbeisdivywrnx.supabase.co/storage/v1/object/public/${BUCKET}`
 
 export type ImageFolder = 'profile' | 'projects' | 'gallery'
 
@@ -34,6 +35,8 @@ export async function uploadImage(
   slug: string,
   file: File,
 ): Promise<UploadResult> {
+  if (!supabase) throw new Error('Supabase is not configured')
+
   const path = buildPath(folder, slug, file)
 
   const { error: uploadError } = await supabase.storage
@@ -45,12 +48,11 @@ export async function uploadImage(
 
   if (uploadError) throw uploadError
 
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
-
-  return { path, url: data.publicUrl }
+  return { path, url: `${BUCKET_URL}/${path}` }
 }
 
 export async function deleteImage(path: string): Promise<void> {
+  if (!supabase) return
   const { error } = await supabase.storage.from(BUCKET).remove([path])
   if (error) throw error
 }
@@ -68,11 +70,11 @@ export async function replaceImage(
 }
 
 export function getPublicUrl(path: string): string {
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
-  return data.publicUrl
+  return `${BUCKET_URL}/${path}`
 }
 
 export async function listImages(folder: ImageFolder, slug?: string): Promise<string[]> {
+  if (!supabase) return []
   const path = slug ? `${folder}/${slug}` : folder
   const { data, error } = await supabase.storage.from(BUCKET).list(path)
   if (error) throw error
@@ -84,6 +86,6 @@ export function getImageUrl(
   fallback: string = '',
 ): string {
   if (!storagePath) return fallback
-  if (storagePath.startsWith('http')) return storagePath
+  if (storagePath.startsWith('http') || storagePath.startsWith('/')) return storagePath
   return getPublicUrl(storagePath)
 }

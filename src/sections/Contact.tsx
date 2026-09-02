@@ -5,6 +5,7 @@ import { Paperclip, KnobMark } from '../components/Doodles'
 import { socialIcon } from '../components/social'
 import { useContent } from '../store/ContentContext'
 import { supabase } from '../utils/supabase/client'
+import { isSupabaseConfigured } from '../utils/supabase/client'
 
 export default function Contact() {
   const { content } = useContent()
@@ -19,6 +20,11 @@ export default function Contact() {
     e.preventDefault()
     setSending(true)
     setError(null)
+    if (!isSupabaseConfigured || !supabase) {
+      setError('Messaging is unavailable right now.')
+      setSending(false)
+      return
+    }
     const { error: insertError } = await supabase
       .from('contact_messages')
       .insert({ name, email, message })
