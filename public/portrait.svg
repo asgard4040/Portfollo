@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">
+  <rect width="400" height="500" fill="#f8f6ef"/>
+  <rect x="12" y="12" width="376" height="476" fill="none" stroke="#cfcabf" stroke-width="1"/>
+
+  <!-- shoulders -->
+  <path d="M112 500 C118 430 150 398 200 398 C250 398 282 430 288 500"
+        fill="none" stroke="#14120e" stroke-width="5" stroke-linecap="round"/>
+  <path d="M132 500 C138 448 164 420 200 420 C236 420 262 448 268 500"
+        fill="none" stroke="#cfcabf" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- head -->
+  <path d="M200 128 C150 128 128 164 128 214 C128 268 158 300 200 300 C242 300 272 268 272 214 C272 164 250 128 200 128 Z"
+        fill="none" stroke="#14120e" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- hair -->
+  <path d="M128 214 C128 156 158 118 200 118 C232 118 256 138 266 168
+           C256 150 234 142 208 142 C178 142 150 154 140 180 C136 192 133 204 133 216 Z"
+        fill="#14120e"/>
+
+  <!-- brows -->
+  <path d="M162 226 C170 218 178 217 184 219" fill="none" stroke="#14120e" stroke-width="4" stroke-linecap="round"/>
+  <path d="M216 219 C222 217 230 218 238 226" fill="none" stroke="#14120e" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- closed eyes -->
+  <path d="M160 240 C170 246 178 246 188 240" fill="none" stroke="#14120e" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M212 240 C222 246 230 246 240 240" fill="none" stroke="#14120e" stroke-width="3.5" stroke-linecap="round"/>
+
+  <!-- nose tick -->
+  <path d="M200 244 L204 258 L198 260" fill="none" stroke="#14120e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- smile -->
+  <path d="M184 276 C190 282 210 282 216 276" fill="none" stroke="#14120e" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- caption -->
+  <text x="200" y="465" text-anchor="middle" font-family="Archivo, sans-serif" font-size="14" font-weight="700" letter-spacing="2.5" fill="#8b8579">PORTRAIT / PLACEHOLDER</text>
+  <text x="200" y="356" text-anchor="middle" font-family="Caveat, cursive" font-size="30" fill="#555149">swap in the real photo</text>
+</svg>
