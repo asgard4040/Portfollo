@@ -30,12 +30,14 @@ export default function ImageUpload({
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState<string | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   const displayUrl = preview ?? getImageUrl(currentPath)
 
   const handleFile = useCallback(
     async (file: File) => {
       setUploading(true)
+      setUploadError(null)
       try {
         const objectUrl = URL.createObjectURL(file)
         setPreview(objectUrl)
@@ -44,6 +46,11 @@ export default function ImageUpload({
         onUploaded(path, url)
       } catch (err) {
         console.error('Upload failed:', err)
+        const message =
+          err instanceof Error && err.message
+            ? err.message
+            : 'Upload failed. Check that Supabase is configured.'
+        setUploadError(message)
         setPreview(null)
       } finally {
         setUploading(false)
@@ -126,21 +133,29 @@ export default function ImageUpload({
             </button>
           )}
         </>
-      ) : (
-        <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center">
-          {uploading ? (
-            <span className="text-sm font-bold text-ink-faint">Uploading…</span>
-          ) : (
-            <>
-              <span className="text-3xl text-ink-faint">+</span>
-              <span className="text-xs font-bold text-ink-faint">{label}</span>
-              <span className="text-[10px] text-ink-faint/60">
-                Click or drag & drop
-              </span>
-            </>
-          )}
-        </div>
-      )}
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center">
+            {uploading ? (
+              <span className="text-sm font-bold text-ink-faint">Uploading…</span>
+            ) : (
+              <>
+                {uploadError ? (
+                  <span className="text-[11px] font-bold leading-tight text-red-600">
+                    {uploadError}
+                  </span>
+                ) : (
+                  <>
+                    <span className="text-3xl text-ink-faint">+</span>
+                    <span className="text-xs font-bold text-ink-faint">{label}</span>
+                    <span className="text-[10px] text-ink-faint/60">
+                      Click or drag & drop
+                    </span>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        )}
     </div>
   )
 }
