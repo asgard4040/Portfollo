@@ -16,7 +16,7 @@ export default function Hero() {
     <section
       ref={stageRef}
       id="home"
-      className="relative flex min-h-screen items-start pt-3 sm:items-center sm:pt-0 overflow-hidden px-4 pb-12 sm:px-8 sm:pb-16 lg:px-12"
+      className="relative flex min-h-screen items-start pt-3 sm:items-center sm:pt-0 overflow-hidden px-4 pb-28 sm:px-8 sm:pb-28 lg:px-12"
     >
       {/* faint outer marks */}
       <div className="pointer-events-none absolute inset-0 text-ink-faint" aria-hidden="true">
@@ -60,27 +60,27 @@ export default function Hero() {
             </p>
             <DrawArrow className="absolute -right-14 -top-4 hidden w-12 sm:block sm:w-14 sm:-right-16" />
           </div>
-
-          {/* CTA row — two equal columns on phones, natural width above */}
-          <div className="btn-row mt-7 sm:mt-10 sm:flex sm:flex-wrap sm:gap-4">
-            <a href="#projects" className="btn btn-solid btn-lg">
-              View my work
-              <IconArrowUpRight className="h-4 w-4" />
-            </a>
-            <a href="#contact" className="btn btn-outline btn-lg">
-              Contact
-              <IconArrowUpRight className="h-4 w-4" />
-            </a>
-          </div>
-
         </Reveal>
 
-        {/* scroll hint — pinned to the bottom of the stage so it stays out of
-            the heading's vertical rhythm */}
-        <p className="pointer-events-none absolute -bottom-[9vh] left-0 hidden items-center gap-3 font-hand text-xl text-ink-faint sm:flex">
+        {/* scroll hint — sits above the CTA buttons */}
+        <p className="pointer-events-none mt-12 hidden items-center gap-3 font-hand text-xl text-ink-faint sm:flex sm:mt-16">
           <span className="h-px w-12 bg-ink-faint" />
           scroll to enter the computer screen ▸
         </p>
+      </div>
+
+      {/* CTA buttons anchored to the bottom of the hero/header */}
+      <div className="absolute inset-x-0 bottom-6 z-30 px-4 sm:bottom-8 sm:px-8 lg:px-12">
+        <div className="mx-auto flex max-w-6xl gap-3 sm:gap-4">
+          <a href="#projects" className="btn btn-solid btn-lg flex-1 sm:flex-none">
+            View my work
+            <IconArrowUpRight className="h-4 w-4" />
+          </a>
+          <a href="#contact" className="btn btn-outline btn-lg flex-1 sm:flex-none">
+            Contact
+            <IconArrowUpRight className="h-4 w-4" />
+          </a>
+        </div>
       </div>
     </section>
   )

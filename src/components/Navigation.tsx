@@ -56,7 +56,7 @@ export default function Navigation() {
           >
             {/* Brand */}
             <a href="#home" className="flex items-baseline gap-2" onClick={close}>
-              <span className="display text-lg text-ink">{content.profile.name}</span>
+              <span className="display text-xl text-ink sm:text-2xl">{content.profile.name}</span>
               <span className="hidden -translate-y-0.5 font-hand text-base text-ink-faint lg:inline">
                 — dev &amp; designer
               </span>
@@ -105,9 +105,9 @@ export default function Navigation() {
                 aria-controls="mobile-menu"
               >
                 {open ? (
-                  <IconX className="h-5 w-5" />
+                  <IconX className="h-6 w-6" />
                 ) : (
-                  <IconMenu className="h-5 w-5" />
+                  <IconMenu className="h-6 w-6" />
                 )}
               </button>
             </div>
@@ -135,7 +135,7 @@ export default function Navigation() {
           >
             {/* Top drawer bar with close button */}
             <div className="flex items-center justify-between border-b border-line pb-4">
-              <span className="display text-xl text-ink">{content.profile.name}</span>
+              <span className="display text-2xl text-ink">{content.profile.name}</span>
               <button
                 type="button"
                 onClick={close}
