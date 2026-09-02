@@ -40,58 +40,66 @@ USING (bucket_id = 'images');
 -- policies let anyone with the anon key write. Add auth if needed.
 -- =============================================================
 
-DROP POLICY IF EXISTS "Content write" ON profile;
-CREATE POLICY "Content write" ON profile FOR INSERT WITH CHECK (true);
-CREATE POLICY "Content write" ON profile FOR UPDATE USING (true);
+-- First, remove ANY write-policy left over from earlier runs, using
+-- every name variant we've ever used (Postgres policy names must be
+-- unique per table, and CREATE POLICY would error if one already exists).
+DO $$
+DECLARE
+  r record;
+BEGIN
+  FOR r IN
+    SELECT p.polname, c.relname
+    FROM pg_policy p
+    JOIN pg_class c ON c.oid = p.polrelid
+    WHERE p.polname IN
+      ('Content write', 'Content write insert', 'Content write update', 'Content write delete')
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON %I', r.polname, r.relname);
+  END LOOP;
+END $$;
 
-DROP POLICY IF EXISTS "Content write" ON nav_items;
-CREATE POLICY "Content write" ON nav_items FOR INSERT WITH CHECK (true);
-CREATE POLICY "Content write" ON nav_items FOR UPDATE USING (true);
-CREATE POLICY "Content write" ON nav_items FOR DELETE USING (true);
+-- Now create one policy per operation, each with a DISTINCT name
+-- (required — a table cannot hold two policies with the same name).
+CREATE POLICY "Content write insert" ON profile FOR INSERT WITH CHECK (true);
+CREATE POLICY "Content write update" ON profile FOR UPDATE USING (true);
 
-DROP POLICY IF EXISTS "Content write" ON social_links;
-CREATE POLICY "Content write" ON social_links FOR INSERT WITH CHECK (true);
-CREATE POLICY "Content write" ON social_links FOR UPDATE USING (true);
-CREATE POLICY "Content write" ON social_links FOR DELETE USING (true);
+CREATE POLICY "Content write insert" ON nav_items FOR INSERT WITH CHECK (true);
+CREATE POLICY "Content write update" ON nav_items FOR UPDATE USING (true);
+CREATE POLICY "Content write delete" ON nav_items FOR DELETE USING (true);
 
-DROP POLICY IF EXISTS "Content write" ON code_skills;
-CREATE POLICY "Content write" ON code_skills FOR INSERT WITH CHECK (true);
-CREATE POLICY "Content write" ON code_skills FOR UPDATE USING (true);
-CREATE POLICY "Content write" ON code_skills FOR DELETE USING (true);
+CREATE POLICY "Content write insert" ON social_links FOR INSERT WITH CHECK (true);
+CREATE POLICY "Content write update" ON social_links FOR UPDATE USING (true);
+CREATE POLICY "Content write delete" ON social_links FOR DELETE USING (true);
 
-DROP POLICY IF EXISTS "Content write" ON design_skills;
-CREATE POLICY "Content write" ON design_skills FOR INSERT WITH CHECK (true);
-CREATE POLICY "Content write" ON design_skills FOR UPDATE USING (true);
-CREATE POLICY "Content write" ON design_skills FOR DELETE USING (true);
+CREATE POLICY "Content write insert" ON code_skills FOR INSERT WITH CHECK (true);
+CREATE POLICY "Content write update" ON code_skills FOR UPDATE USING (true);
+CREATE POLICY "Content write delete" ON code_skills FOR DELETE USING (true);
 
-DROP POLICY IF EXISTS "Content write" ON tools;
-CREATE POLICY "Content write" ON tools FOR INSERT WITH CHECK (true);
-CREATE POLICY "Content write" ON tools FOR UPDATE USING (true);
-CREATE POLICY "Content write" ON tools FOR DELETE USING (true);
+CREATE POLICY "Content write insert" ON design_skills FOR INSERT WITH CHECK (true);
+CREATE POLICY "Content write update" ON design_skills FOR UPDATE USING (true);
+CREATE POLICY "Content write delete" ON design_skills FOR DELETE USING (true);
 
-DROP POLICY IF EXISTS "Content write" ON projects;
-CREATE POLICY "Content write" ON projects FOR INSERT WITH CHECK (true);
-CREATE POLICY "Content write" ON projects FOR UPDATE USING (true);
-CREATE POLICY "Content write" ON projects FOR DELETE USING (true);
+CREATE POLICY "Content write insert" ON tools FOR INSERT WITH CHECK (true);
+CREATE POLICY "Content write update" ON tools FOR UPDATE USING (true);
+CREATE POLICY "Content write delete" ON tools FOR DELETE USING (true);
 
-DROP POLICY IF EXISTS "Content write" ON design_pieces;
-CREATE POLICY "Content write" ON design_pieces FOR INSERT WITH CHECK (true);
-CREATE POLICY "Content write" ON design_pieces FOR UPDATE USING (true);
-CREATE POLICY "Content write" ON design_pieces FOR DELETE USING (true);
+CREATE POLICY "Content write insert" ON projects FOR INSERT WITH CHECK (true);
+CREATE POLICY "Content write update" ON projects FOR UPDATE USING (true);
+CREATE POLICY "Content write delete" ON projects FOR DELETE USING (true);
 
-DROP POLICY IF EXISTS "Content write" ON about;
-CREATE POLICY "Content write" ON about FOR INSERT WITH CHECK (true);
-CREATE POLICY "Content write" ON about FOR UPDATE USING (true);
+CREATE POLICY "Content write insert" ON design_pieces FOR INSERT WITH CHECK (true);
+CREATE POLICY "Content write update" ON design_pieces FOR UPDATE USING (true);
+CREATE POLICY "Content write delete" ON design_pieces FOR DELETE USING (true);
 
-DROP POLICY IF EXISTS "Content write" ON about_journey;
-CREATE POLICY "Content write" ON about_journey FOR INSERT WITH CHECK (true);
-CREATE POLICY "Content write" ON about_journey FOR UPDATE USING (true);
-CREATE POLICY "Content write" ON about_journey FOR DELETE USING (true);
+CREATE POLICY "Content write insert" ON about FOR INSERT WITH CHECK (true);
+CREATE POLICY "Content write update" ON about FOR UPDATE USING (true);
 
-DROP POLICY IF EXISTS "Content write" ON theme_colors;
-CREATE POLICY "Content write" ON theme_colors FOR INSERT WITH CHECK (true);
-CREATE POLICY "Content write" ON theme_colors FOR UPDATE USING (true);
+CREATE POLICY "Content write insert" ON about_journey FOR INSERT WITH CHECK (true);
+CREATE POLICY "Content write update" ON about_journey FOR UPDATE USING (true);
+CREATE POLICY "Content write delete" ON about_journey FOR DELETE USING (true);
 
-DROP POLICY IF EXISTS "Content write" ON model_3d_settings;
-CREATE POLICY "Content write" ON model_3d_settings FOR INSERT WITH CHECK (true);
-CREATE POLICY "Content write" ON model_3d_settings FOR UPDATE USING (true);
+CREATE POLICY "Content write insert" ON theme_colors FOR INSERT WITH CHECK (true);
+CREATE POLICY "Content write update" ON theme_colors FOR UPDATE USING (true);
+
+CREATE POLICY "Content write insert" ON model_3d_settings FOR INSERT WITH CHECK (true);
+CREATE POLICY "Content write update" ON model_3d_settings FOR UPDATE USING (true);
