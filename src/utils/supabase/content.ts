@@ -312,5 +312,10 @@ export async function saveAllContent(
   )
 
   const ok = listResults.every(Boolean) && singleResults.every(Boolean)
-  return ok ? { ok: true } : { ok: false, error: 'Some content could not be saved to the database.' }
+  if (ok) return { ok: true }
+  return {
+    ok: false,
+    error:
+      'Database write blocked. Run supabase/storage.sql in the Supabase SQL Editor to add the write policies and missing columns.',
+  }
 }
