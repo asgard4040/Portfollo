@@ -684,11 +684,27 @@ function ProfilePanel(d: SiteContent, set: (updater: (prev: SiteContent) => Site
 }
 
 export default function Dashboard() {
-  const { content, update, reset } = useContent()
+  const { content, update, reset, save } = useContent()
   const [open, setOpen] = useState(false)
   const [unlocked, setUnlocked] = useState(readUnlocked)
   const [tab, setTab] = useState<Tab>('profile')
   const [draft, setDraft] = useState<SiteContent>(() => clone(content))
+  const [saving, setSaving] = useState(false)
+  const [saveMsg, setSaveMsg] = useState<string | null>(null)
+
+  const handleSave = async () => {
+    update(draft)
+    setSaving(true)
+    setSaveMsg(null)
+    const result = await save()
+    setSaving(false)
+    if (result.ok) {
+      setSaveMsg('Saved to database')
+      setOpen(false)
+    } else {
+      setSaveMsg(result.error ?? 'Saved to this browser only — check Supabase env vars.')
+    }
+  }
 
   useEffect(() => {
     if (open) setDraft(clone(content))
@@ -978,6 +994,11 @@ export default function Dashboard() {
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-ink/50" />
                 {localStorage.getItem('ali-imad-portfolio-v1') ? 'draft in browser' : 'defaults'}
               </span>
+              {saveMsg && (
+                <span className={`hidden text-[11px] lg:inline ${saveMsg === 'Saved to database' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                  {saveMsg}
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -993,13 +1014,11 @@ export default function Dashboard() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  update(draft)
-                  setOpen(false)
-                }}
+                onClick={handleSave}
+                disabled={saving}
                 className="btn btn-solid btn-sm"
               >
-                Save
+                {saving ? 'Saving…' : 'Save'}
                 <IconArrowUpRight className="h-3.5 w-3.5" />
               </button>
               <button
@@ -1148,15 +1167,18 @@ export default function Dashboard() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  update(draft)
-                  setOpen(false)
-                }}
+                onClick={handleSave}
+                disabled={saving}
                 className="btn btn-solid"
               >
-                Save changes
+                {saving ? 'Saving…' : 'Save changes'}
               </button>
             </div>
+            {saveMsg && (
+              <p className={`text-[11px] ${saveMsg === 'Saved to database' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                {saveMsg}
+              </p>
+            )}
           </footer>
         </div>
       )}
