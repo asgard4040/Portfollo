@@ -298,13 +298,22 @@
     overflow: visible;
   }
 
-  /* Hand-drawn line drawing animation */
-  .draw-path {
-    stroke-dasharray: 140;
-    stroke-dashoffset: 140;
+  /* Simple & smooth hardware-accelerated line drawing animation */
+  .s-line-wrap {
+    transform-origin: left center;
+    transform: scaleX(0);
+    opacity: 0;
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1) 0.15s, opacity 0.3s ease 0.15s;
+    will-change: transform, opacity;
   }
-  .in-view .draw-path {
-    animation: draw 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.05s;
+  .in-view .s-line-wrap,
+  .reveal.in-view .s-line-wrap {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  .draw-path {
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
   }
 
   /* Paper sheet with subtle grain + soft shadow */
@@ -487,10 +496,8 @@
     transform: translateY(16px) rotate(var(--reveal-rot, 0deg));
   }
 
-  /* On phones: render section lines immediately without delayed/stuttering dash animation */
-  .draw-path {
-    stroke-dasharray: none !important;
-    stroke-dashoffset: 0 !important;
-    animation: none !important;
+  /* On phones: snappy, smooth 0.45s line draw without lag or stutter */
+  .s-line-wrap {
+    transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1) 0.1s, opacity 0.25s ease 0.1s;
   }
 }
