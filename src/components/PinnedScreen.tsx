@@ -206,6 +206,8 @@ export default function PinnedScreen({
             model.getObjectByName('Monitor') ||
             model
           )
+          /* slight resting pitch (x) so the robot leans toward the viewer */
+          model.rotation.x = (5 * Math.PI) / 180
         }
         const box = new THREE.Box3().setFromObject(model)
         const center = box.getCenter(new THREE.Vector3())
