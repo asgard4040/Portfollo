@@ -696,7 +696,7 @@ export default function Dashboard() {
     update(draft)
     setSaving(true)
     setSaveMsg(null)
-    const result = await save()
+    const result = await save(draft)
     setSaving(false)
     if (result.ok) {
       setSaveMsg('Saved to database')

@@ -43,7 +43,7 @@ interface ContentContextValue {
   content: SiteContent
   update: (patch: Partial<SiteContent>) => void
   reset: () => void
-  save: () => Promise<{ ok: boolean; error?: string }>
+  save: (toSave?: SiteContent) => Promise<{ ok: boolean; error?: string }>
   status: 'loading' | 'ready' | 'error'
 }
 
@@ -253,11 +253,11 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     setContent(defaultContent)
   }, [])
 
-  const save = useCallback(async () => {
-    setContent((prev) => prev) // ensure we have latest
-    const result = await saveAllContent(content)
+  const save = useCallback(async (toSave?: SiteContent) => {
+    const target = toSave ?? content
+    const result = await saveAllContent(target)
     if (result.ok) {
-      writeLocal(content)
+      writeLocal(target)
     }
     return result
   }, [content])
