@@ -112,6 +112,7 @@ export default function PinnedScreen({
   const hintRef = useRef<HTMLDivElement | null>(null)
   const insideChipRef = useRef<HTMLSpanElement | null>(null)
   const glassFxRef = useRef<HTMLDivElement | null>(null)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
   const gyro = useGyroscope()
 
   /* mirror the saved settings into the live console the 3D effect reads */
@@ -194,6 +195,9 @@ export default function PinnedScreen({
        Null on desktop (unchanged behavior). */
     let monitorHead: THREE.Object3D | null = null
 
+    /* Phones don't load a model at all — the video hero replaces the 3D
+       machine, so skip the download, parse and GPU work entirely. */
+    if (!IS_TOUCH) {
     new GLTFLoader()
       .loadAsync(MODEL_URL)
       .then((gltf) => {
@@ -316,6 +320,7 @@ export default function PinnedScreen({
         apply(window.scrollY)
       })
       .catch(() => undefined)
+    }
 
     /* ---- layout + measurement ---- */
     let restX = 1.6
@@ -583,6 +588,39 @@ export default function PinnedScreen({
       const isInside = y >= enterPx
       insideNow = isInside
 
+      /* Phones use a full-screen video hero (header.mp4) instead of the 3D
+         machine: no WebGL, no model, no portal. Keep the page beneath fully
+         visible and let the video fade out from the BOTTOM up as you scroll,
+         revealing the site. Desktop is untouched. */
+      if (IS_TOUCH) {
+        if (world) {
+          world.style.opacity = '1'
+          world.style.transform = 'none'
+          world.style.borderRadius = '0px'
+          world.style.pointerEvents = 'auto'
+          world.style.filter = 'none'
+          world.style.removeProperty('mask-image')
+          world.style.removeProperty('-webkit-mask-image')
+        }
+        if (heroHost) {
+          heroHost.style.opacity = String(Math.max(0, 1 - eEnterRaw * 1.6))
+          heroHost.style.transform = `translate3d(0, ${-eEnterRaw * 40}px, 0)`
+          heroHost.style.pointerEvents = eEnterRaw > 0.98 ? 'none' : 'auto'
+        }
+        const vid = videoRef.current
+        if (vid) {
+          /* fade bottom-to-top: the opaque band is at the TOP and its bottom
+             edge climbs upward, so the bottom of the video disappears first and
+             the last bit to vanish is the top */
+          const h = Math.min(1, eEnterRaw * 1.35) // fraction hidden from the bottom
+          const stop = ((1 - h) * 100).toFixed(2)
+          const mask = `linear-gradient(to bottom, #000 0%, #000 ${stop}%, transparent ${stop}%, transparent 100%)`
+          vid.style.webkitMaskImage = mask
+          vid.style.maskImage = mask
+        }
+        return
+      }
+
       /* 1. Hero layer fading & floating out (only while it's on screen) */
       if (heroHost) {
         const heroFade = Math.min(1, Math.max(0, y / (enterPx * 0.55)))
@@ -842,8 +880,21 @@ export default function PinnedScreen({
 
   return (
     <div ref={rootRef} className="fixed inset-0 z-[30] overflow-hidden">
-      {/* 3D machine */}
+      {/* 3D machine (desktop) / full-screen header video (phone) */}
       <div ref={canvasHostRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />
+      {IS_TOUCH && (
+        <video
+          ref={videoRef}
+          className="pointer-events-none fixed inset-0 h-full w-full object-cover z-[60]"
+          src={(import.meta.env.BASE_URL || '/') + 'header.mp4'}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+        />
+      )}
 
       {/* Hero stage: floats over 3D room, fades smoothly on scroll */}
       {hero && (
