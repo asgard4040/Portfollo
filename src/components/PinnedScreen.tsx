@@ -742,12 +742,7 @@ export default function PinnedScreen({
     window.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('resize', frameMachine)
 
-    // Observe inner layout changes (images loading, dynamic content resizing)
-    const ro = new ResizeObserver(() => {
-      measure()
-      apply(window.scrollY)
-    })
-    ro.observe(inner)
+    // Image and font load listeners for dynamic layout measurement
 
     const onImgLoad = () => {
       measure()
