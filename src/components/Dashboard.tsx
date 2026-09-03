@@ -131,6 +131,98 @@ function Select({
   )
 }
 
+function TechTagsField({
+  value,
+  onChange,
+}: {
+  value: string[]
+  onChange: (tech: string[]) => void
+}) {
+  const [text, setText] = useState(() => (value || []).join(', '))
+  const isFocusedRef = useRef(false)
+
+  useEffect(() => {
+    if (!isFocusedRef.current) {
+      setText((value || []).join(', '))
+    }
+  }, [value])
+
+  const handleInputChange = (raw: string) => {
+    setText(raw)
+    const parsed = raw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    onChange(parsed)
+  }
+
+  const handleBlur = () => {
+    isFocusedRef.current = false
+    const parsed = text
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    setText(parsed.join(', '))
+    onChange(parsed)
+  }
+
+  const removeTag = (indexToRemove: number) => {
+    const updated = (value || []).filter((_, idx) => idx !== indexToRemove)
+    setText(updated.join(', '))
+    onChange(updated)
+  }
+
+  return (
+    <div className="block sm:col-span-2">
+      <label className="block">
+        <span className="field-label">Tech (comma separated)</span>
+        <input
+          className="field-input"
+          value={text}
+          placeholder="e.g. Python, Flask, MySQL"
+          onFocus={() => {
+            isFocusedRef.current = true
+          }}
+          onBlur={handleBlur}
+          onChange={(e) => handleInputChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              if (text.trim() && !text.trim().endsWith(',')) {
+                handleInputChange(text + ', ')
+              }
+            }
+          }}
+        />
+        <span className="mt-1 block text-[11px] text-ink-faint">
+          Type tech names separated by commas (e.g. React, Tailwind, Node)
+        </span>
+      </label>
+
+      {value && value.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {value.map((t, idx) => (
+            <span
+              key={`${t}-${idx}`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper-2 px-2.5 py-0.5 text-xs font-mono text-ink"
+            >
+              <span>{t}</span>
+              <button
+                type="button"
+                onClick={() => removeTag(idx)}
+                className="text-ink-faint hover:text-ink font-bold leading-none cursor-pointer"
+                title={`Remove ${t}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function PaletteField({
   label,
   value,
@@ -848,7 +940,7 @@ export default function Dashboard() {
                       onRemoved={() => setProject(i, 'coverImage', undefined)}
                     />
                   </div>
-                  <Field label="Tech (comma separated)" hint="e.g. Python, Flask, MySQL" value={p.tech.join(', ')} onChange={(v) => setProject(i, 'tech', v.split(',').map((s) => s.trim()).filter(Boolean))} />
+                  <TechTagsField value={p.tech} onChange={(nextTech) => setProject(i, 'tech', nextTech)} />
                   <Field label="Github URL" value={p.github ?? ''} onChange={(v) => setProject(i, 'github', v)} />
                   <Field label="Demo URL" value={p.demo ?? ''} onChange={(v) => setProject(i, 'demo', v)} />
                   <Field label="Hover annotation" value={p.annotation} onChange={(v) => setProject(i, 'annotation', v)} />
