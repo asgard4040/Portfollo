@@ -5,7 +5,7 @@ import { portalScreen } from '../portal/screen'
 import MockPreview from './MockPreview'
 import ImageUpload from './ImageUpload'
 import MultiImageUpload from './MultiImageUpload'
-import PaletteField from './PaletteField'
+import GalleryPaletteField from './GalleryPaletteField'
 import { getImageUrl } from '../utils/supabase/storage'
 import { extractPaletteFromImage } from '../utils/palette'
 import {
@@ -1012,7 +1012,7 @@ export default function Dashboard() {
                       }}
                     />
                   </div>
-                  <PaletteField
+                  <GalleryPaletteField
                     palette={p.palette ?? []}
                     imageUrl={getImageUrl(p.storagePath || p.image || (p.images && p.images[0])) ?? undefined}
                     onChange={(nextPalette) => setPiece(i, 'palette', nextPalette)}

@@ -1,17 +1,17 @@
 import { useState } from 'react'
 import { extractPaletteFromImage } from '../utils/palette'
 
-interface PaletteFieldProps {
+interface GalleryPaletteFieldProps {
   palette: string[]
   imageUrl?: string
   onChange: (palette: string[]) => void
 }
 
-export default function PaletteField({
+export default function GalleryPaletteField({
   palette = [],
   imageUrl,
   onChange,
-}: PaletteFieldProps) {
+}: GalleryPaletteFieldProps) {
   const [extracting, setExtracting] = useState(false)
   const [extractError, setExtractError] = useState<string | null>(null)
 
