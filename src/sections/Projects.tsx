@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import SectionHeading from '../components/SectionHeading'
 import ProjectPreview from '../components/ProjectPreview'
 import { Icon, projectIcon, IconArrowUpRight } from '../components/icons'
@@ -72,6 +73,9 @@ function ProjectCard({ project }: { project: Project }) {
 
 export default function Projects() {
   const { content } = useContent()
+  const [expanded, setExpanded] = useState(false)
+
+  const visibleProjects = expanded ? content.projects : content.projects.slice(0, 4)
 
   return (
     <section id="projects" className="bg-night px-4 py-16 sm:px-6 sm:py-28">
@@ -84,11 +88,35 @@ export default function Projects() {
         />
       </div>
 
-      <div className="mx-auto grid max-w-6xl gap-px overflow-hidden rounded-card border border-night-line bg-night-line lg:grid-cols-3">
-        {content.projects.map((project) => (
+      <div
+        className={`mx-auto grid max-w-6xl gap-px overflow-hidden rounded-card border border-night-line bg-night-line sm:grid-cols-2 ${
+          expanded ? 'lg:grid-cols-3' : 'lg:grid-cols-2'
+        }`}
+      >
+        {visibleProjects.map((project) => (
           <ProjectCard key={project.id} project={project} />
         ))}
       </div>
+
+      {content.projects.length > 4 && (
+        <div className="mt-10 flex justify-center">
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="btn btn-outline btn-round btn-lg flex items-center gap-2.5 shadow-paper transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <span>
+              {expanded ? 'Show Less' : `View More Projects (+${content.projects.length - 4})`}
+            </span>
+            <span
+              className="text-xs transition-transform duration-200"
+              style={{ transform: expanded ? 'rotate(180deg)' : 'none' }}
+            >
+              ▼
+            </span>
+          </button>
+        </div>
+      )}
     </section>
   )
 }

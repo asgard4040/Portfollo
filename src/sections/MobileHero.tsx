@@ -66,29 +66,29 @@ export default function MobileHero() {
 
       {/* Main hero statement */}
       <div className="relative z-10 my-auto pt-6">
-        <p className="micro-label mb-3 inline-flex items-center gap-2 rounded-full border border-line/60 bg-paper/85 px-3 py-1 text-xs text-ink backdrop-blur-sm shadow-sm">
-          <IconCode className="h-3.5 w-3.5" />
+        <p className="micro-label mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-3.5 py-1 text-xs text-white backdrop-blur-md shadow-sm">
+          <IconCode className="h-3.5 w-3.5 text-white" />
           <span>{profile.role}</span>
-          <IconPen className="h-3.5 w-3.5" />
+          <IconPen className="h-3.5 w-3.5 text-white" />
         </p>
 
-        <h1 className="display text-[clamp(3.2rem,13vw,5.5rem)] leading-[0.92] text-ink drop-shadow-sm">
+        <h1 className="display text-[clamp(3.2rem,13vw,5.5rem)] leading-[0.92] text-white drop-shadow-md">
           I&apos;m{' '}
-          <span className="relative inline-block whitespace-nowrap">
+          <span className="relative inline-block whitespace-nowrap text-white">
             {profile.firstName}
-            <Squiggle className="absolute -bottom-1 left-0 h-2.5 w-full text-ink" />
+            <Squiggle className="absolute -bottom-1 left-0 h-2.5 w-full text-white" />
           </span>
-          <span className="block mt-1">Dev &amp;</span>
-          <span className="block">Designer</span>
+          <span className="block mt-1 text-white">Dev &amp;</span>
+          <span className="block text-white">Designer</span>
         </h1>
 
-        <p className="mt-4 max-w-md text-base leading-relaxed text-ink/90 font-medium drop-shadow-xs">
+        <p className="mt-4 max-w-md text-base leading-relaxed text-white/90 font-medium drop-shadow-sm">
           {profile.intro}
         </p>
 
         {profile.currently && (
-          <div className="mt-4 inline-block rounded-md border border-line/50 bg-paper/75 px-3 py-1 backdrop-blur-xs">
-            <p className="font-hand text-base text-ink-soft">
+          <div className="mt-4 inline-block rounded-md border border-white/20 bg-black/40 px-3 py-1 backdrop-blur-xs">
+            <p className="font-hand text-base text-white/90">
               currently {profile.currently}
             </p>
           </div>
