@@ -168,7 +168,6 @@ export default function BackgroundFX() {
         n.pulse += n.pulseSpeed
         n.x += n.vx
         n.y += n.vy
-
         // Wrap around bounds
         if (n.x < -20) n.x = width + 20
         if (n.x > width + 20) n.x = -20
@@ -226,6 +225,9 @@ export default function BackgroundFX() {
     }
     const start = () => {
       if (running || reduced || document.hidden) return
+      /* touch keeps a single static frame — never restart the animation loop,
+         so the GPU stays free while the user scrolls the video/content */
+      if (coarse) return
       running = true
       raf = requestAnimationFrame(draw)
     }
@@ -243,7 +245,15 @@ export default function BackgroundFX() {
     document.addEventListener('visibilitychange', onVisibility)
     resize()
     nodes = Array.from({ length: count }, spawnNode)
-    raf = requestAnimationFrame(draw)
+    if (coarse) {
+      /* Touch: the portal is a video hero, so the animated canvas behind it is
+         pure cost with no benefit. Paint one static frame, then stop the loop
+         entirely — keeps the GPU free and the phone cool/smooth. */
+      draw()
+      running = false
+    } else {
+      raf = requestAnimationFrame(draw)
+    }
 
     return () => {
       cancelAnimationFrame(raf)
