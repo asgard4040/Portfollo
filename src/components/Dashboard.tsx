@@ -1104,7 +1104,7 @@ export default function Dashboard() {
           <RefList
             kind="social"
             title="Social / contact links"
-            note="Recognized labels: Github, Behance, Email, LinkedIn, Dribbble, Instagram."
+            note="Recognized labels: Instagram, WhatsApp, Github, Behance, Email, LinkedIn. Links update both the Contact section and the Footer instantly."
             items={draft.social as unknown[]}
             setItems={(next) => set((prev) => ({ ...prev, social: next as typeof prev.social }))}
           />

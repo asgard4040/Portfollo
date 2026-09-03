@@ -330,7 +330,10 @@ export default function PinnedScreen({
       })
 
       document.documentElement.style.setProperty('--enter-height', `${enterPx}px`)
-      document.documentElement.style.setProperty('--world-height', `${travelMax}px`)
+      document.documentElement.style.setProperty(
+        '--world-height',
+        `${travelMax + innerHeight + 150}px`,
+      )
     }
 
     const frameMachine = () => {

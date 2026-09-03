@@ -29,9 +29,11 @@ export const navItems: NavItem[] = [
 ]
 
 export const social: SocialLink[] = [
+  { label: 'Instagram', href: 'https://instagram.com/' },
+  { label: 'WhatsApp', href: 'https://wa.me/' },
   { label: 'Github', href: 'https://github.com' },
   { label: 'Behance', href: 'https://behance.net' },
-  { label: 'Email', href: 'mailto:hello@ali.dev' },
+  { label: 'Email', href: 'mailto:aliemadnajm.iq@gmail.com' },
 ]
 
 export const profile: ProfileData = {
