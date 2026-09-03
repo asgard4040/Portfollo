@@ -188,7 +188,7 @@ export default function Design() {
       {/* Lightbox Modal */}
       {activePiece && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6"
           role="dialog"
           aria-modal="true"
           aria-label={`${activePiece.title} — full view`}
@@ -199,28 +199,28 @@ export default function Design() {
 
           {/* Modal Container */}
           <div
-            className="surface relative z-10 flex w-full max-w-5xl flex-col overflow-hidden shadow-paper-lg transition-all duration-300 md:flex-row"
+            className="surface relative z-10 flex w-full max-w-5xl max-h-[92vh] flex-col overflow-y-auto shadow-paper-lg transition-all duration-300 md:flex-row md:overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Left: High-Res Artwork Display */}
-            <div className="relative flex-1 bg-night flex items-center justify-center overflow-hidden min-h-[320px] md:min-h-[500px]">
+            {/* Left: Artwork Display with object-contain to show entire artwork */}
+            <div className="relative flex-1 bg-night flex items-center justify-center overflow-hidden min-h-[260px] md:min-h-[520px] p-4 sm:p-6">
               <img
                 src={getImageUrl(activePiece.storagePath, activePiece.image)}
                 alt={activePiece.title}
                 decoding="async"
-                className="h-full w-full object-cover max-h-[75vh]"
+                className="h-full w-full object-contain max-h-[55vh] md:max-h-[75vh] rounded-btn shadow-md"
               />
 
               {/* Mobile Prev / Next overlay */}
-              <div className="absolute inset-x-4 top-1/2 flex -translate-y-1/2 justify-between pointer-events-none md:hidden">
+              <div className="absolute inset-x-3 top-1/2 flex -translate-y-1/2 justify-between pointer-events-none md:hidden">
                 <button
                   type="button"
                   onClick={() => {
                     const idx = activeIndex > 0 ? activeIndex - 1 : fullList.length - 1
                     setActivePiece(fullList[idx])
                   }}
-                  className="btn btn-outline btn-icon btn-sm btn-round pointer-events-auto backdrop-blur-md"
-                  aria-label="Previous"
+                  className="btn btn-outline btn-icon btn-sm btn-round pointer-events-auto shadow-md"
+                  aria-label="Previous artwork"
                 >
                   ←
                 </button>
@@ -230,20 +230,20 @@ export default function Design() {
                     const idx = activeIndex < fullList.length - 1 ? activeIndex + 1 : 0
                     setActivePiece(fullList[idx])
                   }}
-                  className="btn btn-outline btn-icon btn-sm btn-round pointer-events-auto backdrop-blur-md"
-                  aria-label="Next"
+                  className="btn btn-outline btn-icon btn-sm btn-round pointer-events-auto shadow-md"
+                  aria-label="Next artwork"
                 >
                   →
                 </button>
               </div>
             </div>
 
-            {/* Right: Curated Spec & Metadata Panel */}
-            <div className="flex w-full flex-col justify-between border-t border-line p-6 md:w-96 md:border-l md:border-t-0 sm:p-8">
+            {/* Right: Curated Spec & Description Panel */}
+            <div className="flex w-full flex-col justify-between border-t border-line p-5 sm:p-8 md:w-[380px] md:border-l md:border-t-0 md:overflow-y-auto">
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-ink-faint">
-                    {activePiece.category}
+                  <span className="micro-label font-bold uppercase tracking-wider text-ink-faint">
+                    {activePiece.category || 'Artwork'}
                   </span>
                   <button
                     type="button"
@@ -255,25 +255,43 @@ export default function Design() {
                   </button>
                 </div>
 
-                <h3 className="mt-5 text-xl font-bold uppercase tracking-tight text-ink sm:text-2xl">
+                <h3 className="mt-4 text-2xl font-bold uppercase tracking-tight text-ink sm:text-3xl">
                   {activePiece.title}
                 </h3>
                 
-                <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-                  {activePiece.caption}
-                </p>
+                {/* Description Section */}
+                <div className="mt-4 border-t border-line pt-4">
+                  <span className="micro-label text-ink-faint">Description</span>
+                  <p className="mt-1.5 text-sm sm:text-base leading-relaxed text-ink/90 font-medium">
+                    {activePiece.caption}
+                  </p>
+                </div>
+
+                {/* Tags if available */}
+                {activePiece.tags && activePiece.tags.length > 0 && (
+                  <div className="mt-4 border-t border-line pt-4">
+                    <span className="micro-label text-ink-faint">Tags</span>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {activePiece.tags.map((tag) => (
+                        <span key={tag} className="chip text-xs">
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Number & Code */}
                 {activePiece.code && (
-                  <div className="mt-6 border-t border-line pt-4 flex items-center justify-between">
+                  <div className="mt-4 border-t border-line pt-3 flex items-center justify-between">
                     <span className="font-mono text-xs text-ink-faint">INDEX REF</span>
-                    <span className="font-mono text-xl font-light text-ink">{activePiece.code}</span>
+                    <span className="font-mono text-lg font-light text-ink">{activePiece.code}</span>
                   </div>
                 )}
 
                 {/* Color Palette Specimen */}
-                {activePiece.palette && (
-                  <div className="surface-muted mt-6 p-4">
+                {activePiece.palette && activePiece.palette.length > 0 && (
+                  <div className="surface-muted mt-5 p-4">
                     <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-ink-faint">
                       Palette Breakdown
                     </span>
@@ -302,7 +320,7 @@ export default function Design() {
               </div>
 
               {/* Lightbox Navigation Footer */}
-              <div className="mt-8 border-t border-line pt-4 flex items-center justify-between">
+              <div className="mt-6 border-t border-line pt-4 flex items-center justify-between">
                 <span className="font-mono text-xs text-ink-faint">
                   0{activeIndex + 1} / 0{fullList.length}
                 </span>
