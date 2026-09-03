@@ -109,11 +109,27 @@ export default function Projects() {
     }
   }, [activeProject, allProjects])
 
+  const [activeImageIndex, setActiveImageIndex] = useState(0)
+
+  // Reset active image index whenever a different project is opened
+  useEffect(() => {
+    setActiveImageIndex(0)
+  }, [activeProject?.id])
+
   const activeIndex = activeProject
     ? allProjects.findIndex((p) => p.id === activeProject.id)
     : -1
 
-  const coverUrl = activeProject ? getImageUrl(activeProject.coverImage) : null
+  const projectImages = activeProject
+    ? activeProject.images && activeProject.images.length > 0
+      ? activeProject.images
+      : activeProject.coverImage
+        ? [activeProject.coverImage]
+        : []
+    : []
+
+  const currentImagePath = projectImages[activeImageIndex] ?? projectImages[0]
+  const currentImageUrl = currentImagePath ? getImageUrl(currentImagePath) : null
 
   return (
     <section id="projects" className="bg-night px-4 py-16 sm:px-6 sm:py-28">
@@ -185,47 +201,90 @@ export default function Projects() {
               className="surface relative z-10 my-auto flex w-full max-w-4xl max-h-[86vh] flex-col overflow-y-auto shadow-paper-lg transition-all duration-300 md:flex-row md:overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Left Column: Visual Artwork / Preview */}
-              <div className="relative flex-1 bg-night flex items-center justify-center overflow-hidden min-h-[250px] md:min-h-[460px] p-5 sm:p-6 pt-6 sm:pt-6">
-                {coverUrl ? (
-                  <img
-                    src={coverUrl}
-                    alt={`${activeProject.title} screenshot`}
-                    className="h-full w-full object-contain max-h-[48vh] md:max-h-[60vh] rounded-btn shadow-md mt-2 sm:mt-0"
-                  />
+              {/* Left Column: Visual Artwork / Multi-Image Gallery Carousel */}
+              <div className="relative flex-1 bg-night flex flex-col items-center justify-center overflow-hidden min-h-[260px] md:min-h-[460px] p-5 sm:p-6 pt-6 sm:pt-6">
+                {currentImageUrl ? (
+                  <div className="relative flex items-center justify-center w-full flex-1 min-h-[220px]">
+                    <img
+                      key={currentImageUrl}
+                      src={currentImageUrl}
+                      alt={`${activeProject.title} screenshot ${activeImageIndex + 1}`}
+                      className="h-full w-full object-contain max-h-[44vh] md:max-h-[56vh] rounded-btn shadow-md mt-2 sm:mt-0 transition-opacity duration-200"
+                    />
+
+                    {/* Intra-project Image Prev / Next Navigation */}
+                    {projectImages.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setActiveImageIndex((prev) =>
+                              prev > 0 ? prev - 1 : projectImages.length - 1,
+                            )
+                          }}
+                          className="btn btn-outline btn-icon btn-sm btn-round absolute left-2 top-1/2 -translate-y-1/2 shadow-lg backdrop-blur-md"
+                          aria-label="Previous image"
+                        >
+                          ‹
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setActiveImageIndex((prev) =>
+                              prev < projectImages.length - 1 ? prev + 1 : 0,
+                            )
+                          }}
+                          className="btn btn-outline btn-icon btn-sm btn-round absolute right-2 top-1/2 -translate-y-1/2 shadow-lg backdrop-blur-md"
+                          aria-label="Next image"
+                        >
+                          ›
+                        </button>
+
+                        <span className="micro-label absolute bottom-2 right-2 rounded-full bg-black/70 px-2 py-0.5 text-[11px] font-mono text-white backdrop-blur-xs">
+                          {activeImageIndex + 1} / {projectImages.length}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 ) : (
                   <div className="w-full max-w-sm mt-2 sm:mt-0">
                     <ProjectPreview project={activeProject} />
                   </div>
                 )}
 
-                {/* Mobile Prev / Next overlay */}
-                <div className="absolute inset-x-3 top-1/2 flex -translate-y-1/2 justify-between pointer-events-none md:hidden">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const idx =
-                        activeIndex > 0 ? activeIndex - 1 : allProjects.length - 1
-                      setActiveProject(allProjects[idx])
-                    }}
-                    className="btn btn-outline btn-icon btn-sm btn-round pointer-events-auto shadow-md"
-                    aria-label="Previous project"
-                  >
-                    ←
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const idx =
-                        activeIndex < allProjects.length - 1 ? activeIndex + 1 : 0
-                      setActiveProject(allProjects[idx])
-                    }}
-                    className="btn btn-outline btn-icon btn-sm btn-round pointer-events-auto shadow-md"
-                    aria-label="Next project"
-                  >
-                    →
-                  </button>
-                </div>
+                {/* Multiple Images Thumbnail Strip */}
+                {projectImages.length > 1 && (
+                  <div className="mt-3 flex w-full max-w-full items-center gap-2 overflow-x-auto pb-1 px-1 justify-start sm:justify-center">
+                    {projectImages.map((imgPath, imgIdx) => {
+                      const thumbUrl = getImageUrl(imgPath)
+                      const isSelected = imgIdx === activeImageIndex
+                      return (
+                        <button
+                          key={`${imgPath}-${imgIdx}`}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setActiveImageIndex(imgIdx)
+                          }}
+                          className={`relative h-12 w-16 sm:h-14 sm:w-20 flex-shrink-0 overflow-hidden rounded-btn border transition-all ${
+                            isSelected
+                              ? 'border-white ring-2 ring-white/90 scale-105 shadow-md'
+                              : 'border-white/20 opacity-50 hover:opacity-100'
+                          }`}
+                          aria-label={`View image ${imgIdx + 1}`}
+                        >
+                          <img
+                            src={thumbUrl}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Right Column: Details & Actions */}

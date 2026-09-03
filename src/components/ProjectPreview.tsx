@@ -2,7 +2,7 @@ import { getImageUrl } from '../utils/supabase/storage'
 import type { Project } from '../data/projects'
 
 export default function ProjectPreview({ project }: { project: Project }) {
-  const coverUrl = getImageUrl(project.coverImage)
+  const coverUrl = getImageUrl(project.coverImage || (project.images && project.images[0]))
 
   if (coverUrl) {
     return (

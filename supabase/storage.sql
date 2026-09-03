@@ -5,6 +5,7 @@
 
 -- 1. Add image-path columns used by the content sync
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS cover_image text;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS images text[] DEFAULT '{}';
 ALTER TABLE profile ADD COLUMN IF NOT EXISTS photo_storage_path text;
 ALTER TABLE design_pieces ADD COLUMN IF NOT EXISTS storage_path text;
 

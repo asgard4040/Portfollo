@@ -71,6 +71,8 @@ CREATE TABLE IF NOT EXISTS projects (
   github text,
   demo text,
   annotation text NOT NULL DEFAULT '',
+  cover_image text,
+  images text[] DEFAULT '{}',
   sort_order int NOT NULL DEFAULT 0,
   created_at timestamptz DEFAULT now()
 );

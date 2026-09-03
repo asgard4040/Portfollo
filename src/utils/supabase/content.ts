@@ -12,6 +12,7 @@ export interface DbProject {
   demo: string | null
   annotation: string
   cover_image: string | null
+  images?: string[] | null
   sort_order: number
 }
 
@@ -227,19 +228,23 @@ export async function saveAllContent(
   const codeRows: Record<string, unknown>[] = content.codeSkills.map((s, i) => ({ name: s.name, note: s.note ?? null, sort_order: i }))
   const designRows: Record<string, unknown>[] = content.designSkills.map((s, i) => ({ name: s.name, note: s.note ?? null, sort_order: i }))
   const toolRows: Record<string, unknown>[] = content.tools.map((t, i) => ({ name: t, sort_order: i }))
-  const projectRows: Record<string, unknown>[] = content.projects.map((p, i) => ({
-    slug: p.id,
-    meta: p.meta,
-    title: p.title,
-    copy: p.copy,
-    description: p.description,
-    tech: p.tech,
-    github: p.github ?? null,
-    demo: p.demo ?? null,
-    annotation: p.annotation,
-    cover_image: p.coverImage ?? null,
-    sort_order: i,
-  }))
+  const projectRows: Record<string, unknown>[] = content.projects.map((p, i) => {
+    const images = p.images && p.images.length > 0 ? p.images : (p.coverImage ? [p.coverImage] : [])
+    return {
+      slug: p.id,
+      meta: p.meta,
+      title: p.title,
+      copy: p.copy,
+      description: p.description,
+      tech: p.tech,
+      github: p.github ?? null,
+      demo: p.demo ?? null,
+      annotation: p.annotation,
+      cover_image: images[0] ?? p.coverImage ?? null,
+      images: images,
+      sort_order: i,
+    }
+  })
   const pieceRows: Record<string, unknown>[] = content.designPieces.map((p, i) => ({
     slug: p.id,
     title: p.title,
@@ -292,7 +297,17 @@ export async function saveAllContent(
       return !(await sb.from(table).insert(rows)).error
     }
     await sb.from(table).delete().gte('sort_order', 0)
-    return !(await sb.from(table).insert(rows)).error
+    const res = await sb.from(table).insert(rows)
+    if (res.error && table === 'projects') {
+      // Fallback if "images" column has not been added to the Supabase projects table yet
+      const fallbackRows = rows.map((r) => {
+        const { images: _ignored, ...rest } = r as { images?: unknown }
+        return rest
+      })
+      const retry = await sb.from(table).insert(fallbackRows)
+      return !retry.error
+    }
+    return !res.error
   })
 
   const listResults = await Promise.all(listOps)

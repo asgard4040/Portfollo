@@ -85,7 +85,8 @@ function mapDbContent(db: DbContent): SiteContent {
         github: p.github ?? undefined,
         demo: p.demo ?? undefined,
         annotation: p.annotation,
-        coverImage: p.cover_image ?? undefined,
+        coverImage: p.cover_image ?? (p.images && p.images.length > 0 ? p.images[0] : undefined),
+        images: p.images && p.images.length > 0 ? p.images : (p.cover_image ? [p.cover_image] : []),
       }))
   }
 

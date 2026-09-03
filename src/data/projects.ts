@@ -9,6 +9,7 @@ export interface Project {
   demo?: string
   annotation: string
   coverImage?: string
+  images?: string[]
 }
 
 export const projects: Project[] = [

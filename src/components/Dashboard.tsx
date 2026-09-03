@@ -4,6 +4,7 @@ import { deriveTheme, DEFAULT_THEME, type ThemeColors } from '../store/colors'
 import { portalScreen } from '../portal/screen'
 import MockPreview from './MockPreview'
 import ImageUpload from './ImageUpload'
+import MultiImageUpload from './MultiImageUpload'
 import {
   IconPlus,
   IconTrash,
@@ -929,15 +930,18 @@ export default function Dashboard() {
                     <Area label="Description" value={p.description} onChange={(v) => setProject(i, 'description', v)} rows={3} />
                   </div>
                   <div className="sm:col-span-2">
-                    <span className="field-label">Cover image</span>
-                    <ImageUpload
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <span className="field-label mb-0">Project Images (Multiple)</span>
+                      <span className="text-[11px] text-ink-faint">★ The first image is the cover</span>
+                    </div>
+                    <MultiImageUpload
                       folder="projects"
                       slug={p.id}
-                      currentPath={p.coverImage}
-                      aspectClass="aspect-[16/9]"
-                      label="Upload cover"
-                      onUploaded={(path) => setProject(i, 'coverImage', path)}
-                      onRemoved={() => setProject(i, 'coverImage', undefined)}
+                      images={p.images && p.images.length > 0 ? p.images : (p.coverImage ? [p.coverImage] : [])}
+                      onChange={(nextImages) => {
+                        setProject(i, 'images', nextImages)
+                        setProject(i, 'coverImage', nextImages[0] ?? undefined)
+                      }}
                     />
                   </div>
                   <TechTagsField value={p.tech} onChange={(nextTech) => setProject(i, 'tech', nextTech)} />
@@ -947,7 +951,7 @@ export default function Dashboard() {
                 </div>
               </Card>
             ))}
-            <button type="button" onClick={() => set((prev) => ({ ...prev, projects: [...prev.projects, { id: `new-${Math.random().toString(36).slice(2, 6)}`, meta: '07 / Unknown', title: 'New project', copy: 'one-liner', description: 'Short description here.', tech: [], annotation: 'a note', github: '', demo: '', coverImage: undefined }] }))} className="btn btn-outline">
+            <button type="button" onClick={() => set((prev) => ({ ...prev, projects: [...prev.projects, { id: `new-${Math.random().toString(36).slice(2, 6)}`, meta: '07 / Unknown', title: 'New project', copy: 'one-liner', description: 'Short description here.', tech: [], annotation: 'a note', github: '', demo: '', coverImage: undefined, images: [] }] }))} className="btn btn-outline">
               <IconPlus className="h-4 w-4" /> Add project
             </button>
           </div>
