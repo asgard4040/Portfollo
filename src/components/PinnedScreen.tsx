@@ -199,6 +199,12 @@ export default function PinnedScreen({
             model.getObjectByName('Monitor') ||
             model
           )
+          /* The robot's screen mesh is a flat panel lying in the XZ plane (its
+             face normal points up, +Y). Tip the whole model +90° about X so the
+             screen stands upright and faces the camera (+Z). If it ever ends up
+             facing away, flip this to -90° (or add a small yaw). Desktop is
+             never touched — this whole branch is phone-only. */
+          model.rotation.x = 90 * DEG
         }
         const box = new THREE.Box3().setFromObject(model)
         const center = box.getCenter(new THREE.Vector3())
@@ -782,9 +788,11 @@ export default function PinnedScreen({
           /* gentle idle rock so the head is clearly alive even before the gyro
              grants permission — also a quick sanity check that the piece works */
           const t = performance.now() / 1000
+          /* the phone robot is tipped +90° about X, so the screen's "turn"
+             axis is the head's local Z (was Y before the tip) */
           monitorHead.rotation.x = g.tilt * 1.1 + Math.sin(t * 1.4) * 0.05
-          monitorHead.rotation.y = g.sway * 1.2 + Math.sin(t * 1.1) * 0.04
-          monitorHead.rotation.z = Math.sin(t * 0.7) * 0.02
+          monitorHead.rotation.z = g.sway * 1.2 + Math.sin(t * 1.1) * 0.04
+          monitorHead.rotation.y = Math.sin(t * 0.7) * 0.02
         }
         renderer.render(scene, camera)
       }
