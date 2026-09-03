@@ -122,19 +122,19 @@ export default function PinnedScreen({
     initRouter()
 
     /* ---- three.js setup ---- */
+    /* Coarse (touch) devices have high-dpi, power-hungry GPUs. Skip MSAA
+       antialiasing there — it's the biggest single fill cost on mobile GPUs
+       and imperceptible at phone pixel density — and cap the pixel ratio. */
+    const coarse = window.matchMedia('(pointer: coarse)').matches
+    const mobileCap = coarse ? 1 : 2
+    const dprCap = REDUCED ? 1 : mobileCap
     let renderer: THREE.WebGLRenderer | null = null
     try {
-      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true })
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: !coarse && !REDUCED })
     } catch {
       /* WebGL unavailable fallback */
     }
     if (renderer) {
-      /* Coarse (touch) devices have high-dpi, power-hungry GPUs — cap the
-         pixel ratio lower so the full-screen WebGL canvas isn't rendered at
-         retina resolution every frame. Desktop keeps the crisp 2x cap. */
-      const coarse = window.matchMedia('(pointer: coarse)').matches
-      const mobileCap = coarse ? 1 : 2
-      const dprCap = REDUCED ? 1 : mobileCap
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, dprCap))
       renderer.domElement.style.width = '100%'
       renderer.domElement.style.height = '100%'
@@ -550,19 +550,23 @@ export default function PinnedScreen({
       const enterPx = L.enterPx
       const eEnterRaw = Math.min(1, Math.max(0, y / Math.max(1, enterPx)))
       const eEnter = easeInOutCubic(eEnterRaw)
+      const isInside = y >= enterPx
+      insideNow = isInside
 
-      /* 1. Hero layer fading & floating out */
+      /* 1. Hero layer fading & floating out (only while it's on screen) */
       if (heroHost) {
         const heroFade = Math.min(1, Math.max(0, y / (enterPx * 0.55)))
-        const heroOpacity = 1 - heroFade
+        const heroOpacity = isInside ? 0 : 1 - heroFade
         heroHost.style.opacity = String(heroOpacity)
         heroHost.style.transform = `translate3d(0, ${-heroFade * 50}px, 0) scale(${1 - heroFade * 0.04})`
         heroHost.style.pointerEvents = heroOpacity > 0.08 ? 'auto' : 'none'
         heroHost.style.visibility = heroOpacity > 0 ? 'visible' : 'hidden'
       }
 
-      /* 2. 3D Model: Dolly in directly into the front CRT screen & pivot to face front (-90°) */
-      if (renderer && dims.ready) {
+      /* Once fully inside, the opaque page covers the 3D machine and the page
+         is just a straight translate3d — skip all the heavy WebGL projection,
+         matrix-math and filter work that otherwise drives scroll jank. */
+      if (!isInside && renderer && dims.ready) {
         const m = portalScreen.model()
         const restYaw = m.yawDeg * DEG
         const targetYaw = -90 * DEG // front face of monitor & keyboard faces forward (+Z)
@@ -591,15 +595,10 @@ export default function PinnedScreen({
         }
       }
 
-      /* 3. The portal: the page is *on* the glass at rest and zooms out to fill
-            the viewport as the camera dollies in. The page always lays out at
-            the real viewport size, so on a phone the glass shows a phone. */
-      const isInside = y >= enterPx
-      insideNow = isInside
       const W = canvasHost.clientWidth
       const H = canvasHost.clientHeight
 
-      if (renderer && dims.ready && dims.glass.length === 4 && W > 0 && H > 0) {
+      if (!isInside && renderer && dims.ready && dims.glass.length === 4 && W > 0 && H > 0) {
         /* project() reads camera.matrixWorldInverse, which the renderer only
            refreshes during render() — without this the very first frame (before
            anything has been drawn) lays the page onto a garbage quad */
@@ -689,8 +688,11 @@ export default function PinnedScreen({
       if (isInside) {
         const scrollInside = Math.min(L.travelMax, Math.max(0, y - enterPx))
         inner.style.transform = `translate3d(0, ${-scrollInside}px, 0)`
+        /* interactive page once fully inside; the 3D work above is skipped then */
+        world.style.pointerEvents = 'auto'
       } else {
         inner.style.transform = 'translate3d(0, 0, 0)'
+        if (world) world.style.pointerEvents = 'none'
       }
 
       /* Helper hint chips */
@@ -707,8 +709,16 @@ export default function PinnedScreen({
       }
     }
 
+    /* Coalesce scroll events to once per animation frame. The 3D portal does
+       heavy work (projection, matrix math, CSS transforms/filters) that must
+       never run more than once per frame — otherwise scrolling janks. */
+    let scrollRaf = 0
     const onScroll = () => {
-      apply(window.scrollY)
+      if (scrollRaf) return
+      scrollRaf = requestAnimationFrame(() => {
+        scrollRaf = 0
+        apply(window.scrollY)
+      })
     }
 
     window.addEventListener('scroll', onScroll, { passive: true })
