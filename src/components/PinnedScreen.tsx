@@ -26,7 +26,7 @@ const MODEL_URL =
    camera) in model space, so it must NOT inherit the desktop CRT's corrective
    rest/target yaw (default -75°/ -90°) — that would spin it sideways. Force a
    straight-on 0° for the robot; desktop keeps its own values. */
-const ROBOT_YAW = 0 * DEG
+const ROBOT_YAW = 0
 
 const CAM_FOV = 50
 const CAM_REST_Z = 7.5
