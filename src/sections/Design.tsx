@@ -128,14 +128,19 @@ export default function Design() {
     setTimeout(() => setCopiedHex(null), 1500)
   }
 
-  // Touch swipe support for mobile photo carousel
+  // Touch swipe support for mobile photo carousel with debounce lock
   const touchStartX = useRef<number | null>(null)
   const touchStartY = useRef<number | null>(null)
+  const lastActionTimestamp = useRef<number>(0)
 
   // Next / Prev photo handlers (strictly cycles photos within the current piece)
   const handlePrevPhoto = (e?: React.MouseEvent) => {
     e?.preventDefault()
     e?.stopPropagation()
+    const now = Date.now()
+    if (now - lastActionTimestamp.current < 400) return
+    lastActionTimestamp.current = now
+
     if (pieceImages.length > 1) {
       setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : pieceImages.length - 1))
     }
@@ -144,6 +149,10 @@ export default function Design() {
   const handleNextPhoto = (e?: React.MouseEvent) => {
     e?.preventDefault()
     e?.stopPropagation()
+    const now = Date.now()
+    if (now - lastActionTimestamp.current < 400) return
+    lastActionTimestamp.current = now
+
     if (pieceImages.length > 1) {
       setActiveImageIndex((prev) => (prev < pieceImages.length - 1 ? prev + 1 : 0))
     }
@@ -151,6 +160,12 @@ export default function Design() {
 
   // Touch handlers for mobile swipe
   const handleTouchStart = (e: React.TouchEvent) => {
+    // If the touch started on a button or thumbnail, ignore swipe gesture
+    if ((e.target as HTMLElement).closest('button')) {
+      touchStartX.current = null
+      touchStartY.current = null
+      return
+    }
     touchStartX.current = e.touches[0].clientX
     touchStartY.current = e.touches[0].clientY
   }
@@ -165,7 +180,11 @@ export default function Design() {
     // Ignore if touched directly on a control button or thumbnail
     if ((e.target as HTMLElement).closest('button')) return
 
-    if (pieceImages.length > 1 && Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY) * 1.2) {
+    const now = Date.now()
+    if (now - lastActionTimestamp.current < 400) return
+
+    if (pieceImages.length > 1 && Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY) * 1.3) {
+      lastActionTimestamp.current = now
       if (diffX < 0) {
         // Swiped left -> Next photo
         setActiveImageIndex((prev) => (prev < pieceImages.length - 1 ? prev + 1 : 0))
@@ -316,18 +335,19 @@ export default function Design() {
               className="surface relative z-10 my-auto flex w-full max-w-5xl max-h-[86vh] flex-col overflow-y-auto shadow-paper-lg transition-all duration-300 md:flex-row md:overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Left: Artwork Display with 100% full view of the image */}
+              {/* Left: Artwork Display showing 100% of the artwork uncropped */}
               <div
-                className="relative flex-1 bg-night flex flex-col items-center justify-center p-3 sm:p-6 select-none overflow-hidden min-h-[340px] md:min-h-[560px]"
+                className="relative flex-1 bg-night flex flex-col items-center justify-center p-3 sm:p-6 select-none overflow-hidden min-h-[260px] md:min-h-[520px]"
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}
               >
-                <div className="relative w-full h-full flex-1 flex items-center justify-center">
+                <div className="relative w-full flex-1 flex items-center justify-center min-h-[220px] max-h-[50vh] md:max-h-[72vh]">
                   <img
+                    key={currentImageUrl}
                     src={currentImageUrl}
                     alt={`${activePiece.title} - Image ${activeImageIndex + 1}`}
                     decoding="async"
-                    className="w-auto h-auto max-w-full max-h-[64vh] sm:max-h-[72vh] md:max-h-[82vh] object-contain rounded-btn shadow-md transition-all duration-300"
+                    className="h-full w-full object-contain max-h-[50vh] md:max-h-[72vh] rounded-btn shadow-md transition-opacity duration-200"
                   />
 
                   {/* Left & Right Navigation Arrows for cycling photos (ONLY when piece has multiple photos) */}
