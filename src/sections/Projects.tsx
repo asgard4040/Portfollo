@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import SectionHeading from '../components/SectionHeading'
 import ProjectPreview from '../components/ProjectPreview'
 import { Icon, projectIcon, IconArrowUpRight, IconX } from '../components/icons'
@@ -161,200 +162,207 @@ export default function Projects() {
         </div>
       )}
 
-      {/* Project Details Modal */}
-      {activeProject && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6"
-          role="dialog"
-          aria-modal="true"
-          aria-label={`${activeProject.title} — project details`}
-          onClick={() => setActiveProject(null)}
-        >
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-night/90 backdrop-blur-md transition-opacity duration-300" />
-
-          {/* Modal Container */}
+      {/* Project Details Modal — mounted via portal directly to document.body to center on viewport */}
+      {activeProject &&
+        typeof document !== 'undefined' &&
+        createPortal(
           <div
-            className="surface relative z-10 flex w-full max-w-4xl max-h-[92vh] flex-col overflow-y-auto shadow-paper-lg transition-all duration-300 md:flex-row md:overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+            style={{
+              paddingTop: 'max(5.5rem, calc(env(safe-area-inset-top) + 4.5rem))',
+              paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${activeProject.title} — project details`}
+            onClick={() => setActiveProject(null)}
           >
-            {/* Left Column: Visual Artwork / Preview */}
-            <div className="relative flex-1 bg-night flex items-center justify-center overflow-hidden min-h-[260px] md:min-h-[460px] p-6">
-              {coverUrl ? (
-                <img
-                  src={coverUrl}
-                  alt={`${activeProject.title} screenshot`}
-                  className="h-full w-full object-contain max-h-[60vh] rounded-btn shadow-md"
-                />
-              ) : (
-                <div className="w-full max-w-sm">
-                  <ProjectPreview project={activeProject} />
-                </div>
-              )}
+            {/* Backdrop */}
+            <div className="fixed inset-0 bg-night/90 backdrop-blur-md transition-opacity duration-300" />
 
-              {/* Mobile Prev / Next overlay */}
-              <div className="absolute inset-x-3 top-1/2 flex -translate-y-1/2 justify-between pointer-events-none md:hidden">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const idx =
-                      activeIndex > 0 ? activeIndex - 1 : allProjects.length - 1
-                    setActiveProject(allProjects[idx])
-                  }}
-                  className="btn btn-outline btn-icon btn-sm btn-round pointer-events-auto shadow-md"
-                  aria-label="Previous project"
-                >
-                  ←
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const idx =
-                      activeIndex < allProjects.length - 1 ? activeIndex + 1 : 0
-                    setActiveProject(allProjects[idx])
-                  }}
-                  className="btn btn-outline btn-icon btn-sm btn-round pointer-events-auto shadow-md"
-                  aria-label="Next project"
-                >
-                  →
-                </button>
-              </div>
-            </div>
-
-            {/* Right Column: Details & Actions */}
-            <div className="flex w-full flex-col justify-between border-t border-line p-5 sm:p-8 md:w-[420px] md:border-l md:border-t-0 md:overflow-y-auto">
-              <div>
-                {/* Meta header */}
-                <div className="flex items-center justify-between">
-                  <span className="micro-label flex items-center gap-2 text-ink-faint">
-                    <Icon name={projectIcon(activeProject.id)} className="h-4 w-4" />
-                    {activeProject.meta}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setActiveProject(null)}
-                    className="btn btn-outline btn-icon btn-sm btn-round"
-                    aria-label="Close"
-                  >
-                    <IconX className="h-4 w-4" />
-                  </button>
-                </div>
-
-                {/* Title and Tagline */}
-                <h2 className="display mt-4 text-2xl sm:text-3xl text-ink">
-                  {activeProject.title}
-                </h2>
-                <p className="mt-1 font-hand text-xl text-ink-soft">
-                  {activeProject.copy}
-                </p>
-
-                {/* Full Description */}
-                <div className="mt-4 border-t border-line pt-4">
-                  <span className="micro-label text-ink-faint">About the project</span>
-                  <p className="mt-2 text-sm sm:text-base leading-relaxed text-ink/90">
-                    {activeProject.description}
-                  </p>
-                </div>
-
-                {/* Tech Stack */}
-                <div className="mt-5 border-t border-line pt-4">
-                  <span className="micro-label text-ink-faint">Technologies used</span>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {activeProject.tech.map((t) => (
-                      <span key={t} className="chip chip-strong text-xs">
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Annotation */}
-                {activeProject.annotation && (
-                  <div className="mt-4 rounded-md border border-line/60 bg-paper-2/60 px-3 py-2">
-                    <p className="font-hand text-base text-ink-soft">
-                      ✦ {activeProject.annotation}
-                    </p>
+            {/* Modal Container */}
+            <div
+              className="surface relative z-10 my-auto flex w-full max-w-4xl max-h-[86vh] flex-col overflow-y-auto shadow-paper-lg transition-all duration-300 md:flex-row md:overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Left Column: Visual Artwork / Preview */}
+              <div className="relative flex-1 bg-night flex items-center justify-center overflow-hidden min-h-[250px] md:min-h-[460px] p-5 sm:p-6 pt-6 sm:pt-6">
+                {coverUrl ? (
+                  <img
+                    src={coverUrl}
+                    alt={`${activeProject.title} screenshot`}
+                    className="h-full w-full object-contain max-h-[48vh] md:max-h-[60vh] rounded-btn shadow-md mt-2 sm:mt-0"
+                  />
+                ) : (
+                  <div className="w-full max-w-sm mt-2 sm:mt-0">
+                    <ProjectPreview project={activeProject} />
                   </div>
                 )}
+
+                {/* Mobile Prev / Next overlay */}
+                <div className="absolute inset-x-3 top-1/2 flex -translate-y-1/2 justify-between pointer-events-none md:hidden">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const idx =
+                        activeIndex > 0 ? activeIndex - 1 : allProjects.length - 1
+                      setActiveProject(allProjects[idx])
+                    }}
+                    className="btn btn-outline btn-icon btn-sm btn-round pointer-events-auto shadow-md"
+                    aria-label="Previous project"
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const idx =
+                        activeIndex < allProjects.length - 1 ? activeIndex + 1 : 0
+                      setActiveProject(allProjects[idx])
+                    }}
+                    className="btn btn-outline btn-icon btn-sm btn-round pointer-events-auto shadow-md"
+                    aria-label="Next project"
+                  >
+                    →
+                  </button>
+                </div>
               </div>
 
-              {/* Action Buttons & Bottom Navigation */}
-              <div className="mt-8 border-t border-line pt-5">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  {activeProject.demo ? (
-                    <a
-                      href={activeProject.demo}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn btn-solid btn-lg flex-1 text-center"
-                    >
-                      Live Demo
-                      <IconArrowUpRight className="h-4 w-4" />
-                    </a>
-                  ) : null}
-
-                  {activeProject.github ? (
-                    <a
-                      href={activeProject.github}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn btn-outline btn-lg flex-1 text-center"
-                    >
-                      Source Code
-                      <IconArrowUpRight className="h-4 w-4" />
-                    </a>
-                  ) : null}
-
-                  {!activeProject.demo && !activeProject.github ? (
-                    <a
-                      href="#contact"
+              {/* Right Column: Details & Actions */}
+              <div className="flex w-full flex-col justify-between border-t border-line p-5 sm:p-8 md:w-[420px] md:border-l md:border-t-0 md:overflow-y-auto">
+                <div>
+                  {/* Meta header */}
+                  <div className="flex items-center justify-between">
+                    <span className="micro-label flex items-center gap-2 text-ink-faint">
+                      <Icon name={projectIcon(activeProject.id)} className="h-4 w-4" />
+                      {activeProject.meta}
+                    </span>
+                    <button
+                      type="button"
                       onClick={() => setActiveProject(null)}
-                      className="btn btn-solid btn-lg w-full text-center"
+                      className="btn btn-outline btn-icon btn-sm btn-round"
+                      aria-label="Close"
                     >
-                      Ask About This Project
-                      <IconArrowUpRight className="h-4 w-4" />
-                    </a>
-                  ) : null}
+                      <IconX className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Title and Tagline */}
+                  <h2 className="display mt-4 text-2xl sm:text-3xl text-ink">
+                    {activeProject.title}
+                  </h2>
+                  <p className="mt-1 font-hand text-xl text-ink-soft">
+                    {activeProject.copy}
+                  </p>
+
+                  {/* Full Description */}
+                  <div className="mt-4 border-t border-line pt-4">
+                    <span className="micro-label text-ink-faint">About the project</span>
+                    <p className="mt-2 text-sm sm:text-base leading-relaxed text-ink/90">
+                      {activeProject.description}
+                    </p>
+                  </div>
+
+                  {/* Tech Stack */}
+                  <div className="mt-5 border-t border-line pt-4">
+                    <span className="micro-label text-ink-faint">Technologies used</span>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {activeProject.tech.map((t) => (
+                        <span key={t} className="chip chip-strong text-xs">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Annotation */}
+                  {activeProject.annotation && (
+                    <div className="mt-4 rounded-md border border-line/60 bg-paper-2/60 px-3 py-2">
+                      <p className="font-hand text-base text-ink-soft">
+                        ✦ {activeProject.annotation}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
-                {/* Navigation Footer */}
-                <div className="mt-5 flex items-center justify-between text-ink-faint font-mono text-xs">
-                  <span>
-                    0{activeIndex + 1} / 0{allProjects.length}
-                  </span>
+                {/* Action Buttons & Bottom Navigation */}
+                <div className="mt-8 border-t border-line pt-5">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {activeProject.demo ? (
+                      <a
+                        href={activeProject.demo}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-solid btn-lg flex-1 text-center"
+                      >
+                        Live Demo
+                        <IconArrowUpRight className="h-4 w-4" />
+                      </a>
+                    ) : null}
 
-                  <div className="hidden md:flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const idx =
-                          activeIndex > 0 ? activeIndex - 1 : allProjects.length - 1
-                        setActiveProject(allProjects[idx])
-                      }}
-                      className="btn btn-outline btn-icon btn-sm btn-round"
-                      aria-label="Previous project"
-                    >
-                      ←
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const idx =
-                          activeIndex < allProjects.length - 1 ? activeIndex + 1 : 0
-                        setActiveProject(allProjects[idx])
-                      }}
-                      className="btn btn-outline btn-icon btn-sm btn-round"
-                      aria-label="Next project"
-                    >
-                      →
-                    </button>
+                    {activeProject.github ? (
+                      <a
+                        href={activeProject.github}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-outline btn-lg flex-1 text-center"
+                      >
+                        Source Code
+                        <IconArrowUpRight className="h-4 w-4" />
+                      </a>
+                    ) : null}
+
+                    {!activeProject.demo && !activeProject.github ? (
+                      <a
+                        href="#contact"
+                        onClick={() => setActiveProject(null)}
+                        className="btn btn-solid btn-lg w-full text-center"
+                      >
+                        Ask About This Project
+                        <IconArrowUpRight className="h-4 w-4" />
+                      </a>
+                    ) : null}
+                  </div>
+
+                  {/* Navigation Footer */}
+                  <div className="mt-5 flex items-center justify-between text-ink-faint font-mono text-xs">
+                    <span>
+                      0{activeIndex + 1} / 0{allProjects.length}
+                    </span>
+
+                    <div className="hidden md:flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const idx =
+                            activeIndex > 0 ? activeIndex - 1 : allProjects.length - 1
+                          setActiveProject(allProjects[idx])
+                        }}
+                        className="btn btn-outline btn-icon btn-sm btn-round"
+                        aria-label="Previous project"
+                      >
+                        ←
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const idx =
+                            activeIndex < allProjects.length - 1 ? activeIndex + 1 : 0
+                          setActiveProject(allProjects[idx])
+                        }}
+                        className="btn btn-outline btn-icon btn-sm btn-round"
+                        aria-label="Next project"
+                      >
+                        →
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </section>
   )
 }

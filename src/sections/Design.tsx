@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import Reveal from '../components/Reveal'
 import { designPieces, type DesignPiece } from '../data/design'
 import { useContent } from '../store/ContentContext'
@@ -185,154 +186,47 @@ export default function Design() {
         )}
       </div>
 
-      {/* Lightbox Modal */}
-      {activePiece && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6"
-          role="dialog"
-          aria-modal="true"
-          aria-label={`${activePiece.title} — full view`}
-          onClick={() => setActivePiece(null)}
-        >
-          {/* Ambient Backdrop */}
-          <div className="absolute inset-0 bg-night/90 backdrop-blur-md transition-opacity duration-300" />
-
-          {/* Modal Container */}
+      {/* Lightbox Modal — mounted via portal directly to document.body to center on viewport */}
+      {activePiece &&
+        typeof document !== 'undefined' &&
+        createPortal(
           <div
-            className="surface relative z-10 flex w-full max-w-5xl max-h-[92vh] flex-col overflow-y-auto shadow-paper-lg transition-all duration-300 md:flex-row md:overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+            style={{
+              paddingTop: 'max(5.5rem, calc(env(safe-area-inset-top) + 4.5rem))',
+              paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))',
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${activePiece.title} — full view`}
+            onClick={() => setActivePiece(null)}
           >
-            {/* Left: Artwork Display with object-contain to show entire artwork */}
-            <div className="relative flex-1 bg-night flex items-center justify-center overflow-hidden min-h-[260px] md:min-h-[520px] p-4 sm:p-6">
-              <img
-                src={getImageUrl(activePiece.storagePath, activePiece.image)}
-                alt={activePiece.title}
-                decoding="async"
-                className="h-full w-full object-contain max-h-[55vh] md:max-h-[75vh] rounded-btn shadow-md"
-              />
+            {/* Ambient Backdrop */}
+            <div className="fixed inset-0 bg-night/90 backdrop-blur-md transition-opacity duration-300" />
 
-              {/* Mobile Prev / Next overlay */}
-              <div className="absolute inset-x-3 top-1/2 flex -translate-y-1/2 justify-between pointer-events-none md:hidden">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const idx = activeIndex > 0 ? activeIndex - 1 : fullList.length - 1
-                    setActivePiece(fullList[idx])
-                  }}
-                  className="btn btn-outline btn-icon btn-sm btn-round pointer-events-auto shadow-md"
-                  aria-label="Previous artwork"
-                >
-                  ←
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const idx = activeIndex < fullList.length - 1 ? activeIndex + 1 : 0
-                    setActivePiece(fullList[idx])
-                  }}
-                  className="btn btn-outline btn-icon btn-sm btn-round pointer-events-auto shadow-md"
-                  aria-label="Next artwork"
-                >
-                  →
-                </button>
-              </div>
-            </div>
+            {/* Modal Container */}
+            <div
+              className="surface relative z-10 my-auto flex w-full max-w-5xl max-h-[86vh] flex-col overflow-y-auto shadow-paper-lg transition-all duration-300 md:flex-row md:overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Left: Artwork Display with object-contain to show entire artwork */}
+              <div className="relative flex-1 bg-night flex items-center justify-center overflow-hidden min-h-[250px] md:min-h-[520px] p-4 sm:p-6 pt-6 sm:pt-6">
+                <img
+                  src={getImageUrl(activePiece.storagePath, activePiece.image)}
+                  alt={activePiece.title}
+                  decoding="async"
+                  className="h-full w-full object-contain max-h-[50vh] md:max-h-[75vh] rounded-btn shadow-md mt-2 sm:mt-0"
+                />
 
-            {/* Right: Curated Spec & Description Panel */}
-            <div className="flex w-full flex-col justify-between border-t border-line p-5 sm:p-8 md:w-[380px] md:border-l md:border-t-0 md:overflow-y-auto">
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="micro-label font-bold uppercase tracking-wider text-ink-faint">
-                    {activePiece.category || 'Artwork'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setActivePiece(null)}
-                    className="btn btn-outline btn-icon btn-sm btn-round"
-                    aria-label="Close"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <h3 className="mt-4 text-2xl font-bold uppercase tracking-tight text-ink sm:text-3xl">
-                  {activePiece.title}
-                </h3>
-                
-                {/* Description Section */}
-                <div className="mt-4 border-t border-line pt-4">
-                  <span className="micro-label text-ink-faint">Description</span>
-                  <p className="mt-1.5 text-sm sm:text-base leading-relaxed text-ink/90 font-medium">
-                    {activePiece.caption}
-                  </p>
-                </div>
-
-                {/* Tags if available */}
-                {activePiece.tags && activePiece.tags.length > 0 && (
-                  <div className="mt-4 border-t border-line pt-4">
-                    <span className="micro-label text-ink-faint">Tags</span>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {activePiece.tags.map((tag) => (
-                        <span key={tag} className="chip text-xs">
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Number & Code */}
-                {activePiece.code && (
-                  <div className="mt-4 border-t border-line pt-3 flex items-center justify-between">
-                    <span className="font-mono text-xs text-ink-faint">INDEX REF</span>
-                    <span className="font-mono text-lg font-light text-ink">{activePiece.code}</span>
-                  </div>
-                )}
-
-                {/* Color Palette Specimen */}
-                {activePiece.palette && activePiece.palette.length > 0 && (
-                  <div className="surface-muted mt-5 p-4">
-                    <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-ink-faint">
-                      Palette Breakdown
-                    </span>
-                    <div className="mt-2.5 flex flex-col gap-1.5">
-                      {activePiece.palette.map((color, cIdx) => (
-                        <div
-                          key={cIdx}
-                          onClick={(e) => copyColor(color, e)}
-                          className="group/row flex cursor-pointer items-center justify-between rounded-btn p-1.5 transition-colors hover:bg-card"
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <span
-                              className="h-4 w-4 rounded-full border border-ink/15 shadow-paper-sm"
-                              style={{ backgroundColor: color }}
-                            />
-                            <span className="font-mono text-xs font-semibold text-ink">{color}</span>
-                          </div>
-                          <span className="font-mono text-[10px] text-ink-faint group-hover/row:text-ink">
-                            {copiedHex === color ? 'Copied!' : 'Copy'}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Lightbox Navigation Footer */}
-              <div className="mt-6 border-t border-line pt-4 flex items-center justify-between">
-                <span className="font-mono text-xs text-ink-faint">
-                  0{activeIndex + 1} / 0{fullList.length}
-                </span>
-
-                <div className="hidden md:flex items-center gap-2">
+                {/* Mobile Prev / Next overlay */}
+                <div className="absolute inset-x-3 top-1/2 flex -translate-y-1/2 justify-between pointer-events-none md:hidden">
                   <button
                     type="button"
                     onClick={() => {
                       const idx = activeIndex > 0 ? activeIndex - 1 : fullList.length - 1
                       setActivePiece(fullList[idx])
                     }}
-                    className="btn btn-outline btn-icon btn-sm btn-round"
+                    className="btn btn-outline btn-icon btn-sm btn-round pointer-events-auto shadow-md"
                     aria-label="Previous artwork"
                   >
                     ←
@@ -343,17 +237,131 @@ export default function Design() {
                       const idx = activeIndex < fullList.length - 1 ? activeIndex + 1 : 0
                       setActivePiece(fullList[idx])
                     }}
-                    className="btn btn-outline btn-icon btn-sm btn-round"
+                    className="btn btn-outline btn-icon btn-sm btn-round pointer-events-auto shadow-md"
                     aria-label="Next artwork"
                   >
                     →
                   </button>
                 </div>
               </div>
+
+              {/* Right: Curated Spec & Description Panel */}
+              <div className="flex w-full flex-col justify-between border-t border-line p-5 sm:p-8 md:w-[380px] md:border-l md:border-t-0 md:overflow-y-auto">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="micro-label font-bold uppercase tracking-wider text-ink-faint">
+                      {activePiece.category || 'Artwork'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setActivePiece(null)}
+                      className="btn btn-outline btn-icon btn-sm btn-round"
+                      aria-label="Close"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <h3 className="mt-4 text-2xl font-bold uppercase tracking-tight text-ink sm:text-3xl">
+                    {activePiece.title}
+                  </h3>
+                  
+                  {/* Description Section */}
+                  <div className="mt-4 border-t border-line pt-4">
+                    <span className="micro-label text-ink-faint">Description</span>
+                    <p className="mt-1.5 text-sm sm:text-base leading-relaxed text-ink/90 font-medium">
+                      {activePiece.caption}
+                    </p>
+                  </div>
+
+                  {/* Tags if available */}
+                  {activePiece.tags && activePiece.tags.length > 0 && (
+                    <div className="mt-4 border-t border-line pt-4">
+                      <span className="micro-label text-ink-faint">Tags</span>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {activePiece.tags.map((tag) => (
+                          <span key={tag} className="chip text-xs">
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Number & Code */}
+                  {activePiece.code && (
+                    <div className="mt-4 border-t border-line pt-3 flex items-center justify-between">
+                      <span className="font-mono text-xs text-ink-faint">INDEX REF</span>
+                      <span className="font-mono text-lg font-light text-ink">{activePiece.code}</span>
+                    </div>
+                  )}
+
+                  {/* Color Palette Specimen */}
+                  {activePiece.palette && activePiece.palette.length > 0 && (
+                    <div className="surface-muted mt-5 p-4">
+                      <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-ink-faint">
+                        Palette Breakdown
+                      </span>
+                      <div className="mt-2.5 flex flex-col gap-1.5">
+                        {activePiece.palette.map((color, cIdx) => (
+                          <div
+                            key={cIdx}
+                            onClick={(e) => copyColor(color, e)}
+                            className="group/row flex cursor-pointer items-center justify-between rounded-btn p-1.5 transition-colors hover:bg-card"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span
+                                className="h-4 w-4 rounded-full border border-ink/15 shadow-paper-sm"
+                                style={{ backgroundColor: color }}
+                              />
+                              <span className="font-mono text-xs font-semibold text-ink">{color}</span>
+                            </div>
+                            <span className="font-mono text-[10px] text-ink-faint group-hover/row:text-ink">
+                              {copiedHex === color ? 'Copied!' : 'Copy'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Lightbox Navigation Footer */}
+                <div className="mt-6 border-t border-line pt-4 flex items-center justify-between">
+                  <span className="font-mono text-xs text-ink-faint">
+                    0{activeIndex + 1} / 0{fullList.length}
+                  </span>
+
+                  <div className="hidden md:flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const idx = activeIndex > 0 ? activeIndex - 1 : fullList.length - 1
+                        setActivePiece(fullList[idx])
+                      }}
+                      className="btn btn-outline btn-icon btn-sm btn-round"
+                      aria-label="Previous artwork"
+                    >
+                      ←
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const idx = activeIndex < fullList.length - 1 ? activeIndex + 1 : 0
+                        setActivePiece(fullList[idx])
+                      }}
+                      className="btn btn-outline btn-icon btn-sm btn-round"
+                      aria-label="Next artwork"
+                    >
+                      →
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </section>
   )
 }
