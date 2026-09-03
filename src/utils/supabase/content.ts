@@ -297,19 +297,45 @@ export async function saveAllContent(
   const listOps = tables.map(async (table) => {
     const rows = rowSets[table] ?? []
     if (table === 'design_pieces') {
-      // keep is_hero rows (the hero piece is not edited in the editor)
       await sb.from(table).delete().eq('is_hero', false)
-      const res = await sb.from(table).insert(rows)
-      if (res.error) {
-        // Fallback if "images" column has not been added to design_pieces yet
-        const fallbackRows = rows.map((r) => {
-          const { images: _ignored, ...rest } = r as { images?: unknown }
-          return rest
-        })
-        const retry = await sb.from(table).insert(fallbackRows)
-        return !retry.error
+      let ok = true
+      if (rows.length > 0) {
+        const res = await sb.from(table).insert(rows)
+        if (res.error) {
+          // Fallback if "images" column has not been added to design_pieces yet
+          const fallbackRows = rows.map((r) => {
+            const { images: _ignored, ...rest } = r as { images?: unknown }
+            return rest
+          })
+          const retry = await sb.from(table).insert(fallbackRows)
+          ok = !retry.error
+        }
       }
-      return !res.error
+
+      // Save/update the hero banner row if galleryHero is provided
+      if (content.galleryHero && (content.galleryHero.storagePath || content.galleryHero.image)) {
+        await sb.from(table).delete().eq('is_hero', true)
+        const heroRow = {
+          slug: 'editorial-hero',
+          title: content.galleryHero.title || 'Featured Editorial',
+          caption: 'Gallery Header',
+          category: 'Editorial',
+          storage_path: content.galleryHero.storagePath ?? null,
+          image: content.galleryHero.image ?? null,
+          images: content.galleryHero.storagePath ? [content.galleryHero.storagePath] : (content.galleryHero.image ? [content.galleryHero.image] : []),
+          is_hero: true,
+          sort_order: -1,
+        }
+        const heroRes = await sb.from(table).insert(heroRow)
+        if (heroRes.error) {
+          const { images: _ignored, ...fallbackHero } = heroRow
+          await sb.from(table).insert(fallbackHero)
+        }
+      } else if (content.galleryHero === null) {
+        await sb.from(table).delete().eq('is_hero', true)
+      }
+
+      return ok
     }
     await sb.from(table).delete().gte('sort_order', 0)
     const res = await sb.from(table).insert(rows)

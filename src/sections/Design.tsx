@@ -22,14 +22,15 @@ export default function Design() {
       : designPieces
   }, [content.designPieces])
 
-  // Full gallery list (no placeholder hero) for lightbox navigation.
-  // The hero featured piece is only promoted from the first real piece.
+  // Full gallery list for lightbox navigation.
   const fullList = useMemo<DesignPiece[]>(
     () => (allPieces.length > 0 ? allPieces : []),
     [allPieces],
   )
-  const heroPieceRef = allPieces.length > 0 ? allPieces[0] : null
   const activeIndex = activePiece ? fullList.findIndex((p) => p.id === activePiece.id) : -1
+
+  // Header banner image (only header, NOT inserted as a piece)
+  const heroHeaderSrc = content.galleryHero?.storagePath || content.galleryHero?.image
 
   // Resolve all images for the currently active piece
   const pieceImages = useMemo(() => {
@@ -188,27 +189,16 @@ export default function Design() {
           </span>
         </Reveal>
 
-        {/* Hero Wide Panoramic Featured Image (first real piece) */}
-        {heroPieceRef && (
+        {/* Hero Wide Panoramic Featured Image (only header, NOT a piece) */}
+        {heroHeaderSrc && (
           <Reveal className="mt-8">
-            <div
-              onClick={() => setActivePiece(heroPieceRef)}
-              className="surface surface-lift group relative aspect-[16/9] w-full cursor-pointer overflow-hidden bg-night sm:aspect-[21/9]"
-            >
+            <div className="surface surface-lift group relative aspect-[16/9] w-full overflow-hidden bg-night sm:aspect-[21/9]">
               <img
-                src={getImageUrl(
-                  heroPieceRef.storagePath,
-                  heroPieceRef.images && heroPieceRef.images.length > 0 ? heroPieceRef.images[0] : heroPieceRef.image,
-                )}
-                alt={heroPieceRef.title}
+                src={getImageUrl(heroHeaderSrc)}
+                alt={content.galleryHero?.title || 'Gallery Header'}
                 decoding="async"
                 className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
               />
-              <div className="absolute inset-0 flex items-center justify-center bg-night/35 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                <span className="chip chip-strong backdrop-blur-sm">
-                  View Editorial
-                </span>
-              </div>
             </div>
           </Reveal>
         )}

@@ -964,6 +964,52 @@ export default function Dashboard() {
         const arts = ['logo', 'poster', 'identity', 'type', 'manip', 'ui', 'stamp', 'motion']
         return (
           <div className="space-y-5">
+            <Card
+              title="Gallery Header Image (Banner Only)"
+              note="This panoramic image appears only as the wide header banner at the top of the gallery. It is NOT inserted as a piece card in the grid below."
+            >
+              <div className="space-y-3">
+                <Field
+                  label="Header Tagline / Title (optional)"
+                  value={draft.galleryHero?.title ?? ''}
+                  onChange={(v) =>
+                    set((prev) => ({
+                      ...prev,
+                      galleryHero: { ...(prev.galleryHero ?? {}), title: v },
+                    }))
+                  }
+                />
+                <div>
+                  <span className="field-label">Header Banner Image</span>
+                  <ImageUpload
+                    folder="gallery"
+                    slug="header-banner"
+                    currentPath={draft.galleryHero?.storagePath}
+                    aspectClass="aspect-[21/9]"
+                    label="Upload Gallery Header Banner"
+                    onUploaded={(path) =>
+                      set((prev) => ({
+                        ...prev,
+                        galleryHero: { ...(prev.galleryHero ?? {}), storagePath: path, image: path },
+                      }))
+                    }
+                    onRemoved={() =>
+                      set((prev) => ({
+                        ...prev,
+                        galleryHero: undefined,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+            </Card>
+
+            <div className="border-t border-line/60 pt-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-ink-faint">
+                Gallery Grid Pieces ({draft.designPieces.length})
+              </span>
+            </div>
+
             {draft.designPieces.map((p, i) => (
               <Card
                 key={`${p.id}-${i}`}

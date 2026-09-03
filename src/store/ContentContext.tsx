@@ -17,6 +17,11 @@ export interface SiteContent {
   tools: string[]
   projects: typeof projects
   designPieces: typeof designPieces
+  galleryHero?: {
+    storagePath?: string
+    image?: string
+    title?: string
+  }
   about: typeof aboutContent
   colors: ThemeColors
   model3D: Model3DSettings
@@ -91,6 +96,15 @@ function mapDbContent(db: DbContent): SiteContent {
   }
 
   if (db.designPieces.length) {
+    const heroDb = db.designPieces.find((p) => p.is_hero)
+    if (heroDb) {
+      c.galleryHero = {
+        storagePath: heroDb.storage_path ?? (heroDb.images && heroDb.images[0]) ?? undefined,
+        image: heroDb.image ?? (heroDb.images && heroDb.images[0]) ?? undefined,
+        title: heroDb.title || undefined,
+      }
+    }
+
     const pieces = db.designPieces
       .sort((a, b) => a.sort_order - b.sort_order)
       .filter((p) => !p.is_hero)
