@@ -22,6 +22,12 @@ const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(pointer: c
 const MODEL_URL =
   (import.meta.env.BASE_URL || '/') + (IS_TOUCH ? 'robot_compuer.glb' : 'pc.glb')
 
+/* The phone robot's screen already faces forward (+Z, same direction as the
+   camera) in model space, so it must NOT inherit the desktop CRT's corrective
+   rest/target yaw (default -75°/ -90°) — that would spin it sideways. Force a
+   straight-on 0° for the robot; desktop keeps its own values. */
+const ROBOT_YAW = 0 * DEG
+
 const CAM_FOV = 50
 const CAM_REST_Z = 7.5
 const DEG = Math.PI / 180
@@ -199,12 +205,6 @@ export default function PinnedScreen({
             model.getObjectByName('Monitor') ||
             model
           )
-          /* The robot's screen mesh is a flat panel lying in the XZ plane (its
-             face normal points up, +Y). Tip the whole model +90° about X so the
-             screen stands upright and faces the camera (+Z). If it ever ends up
-             facing away, flip this to -90° (or add a small yaw). Desktop is
-             never touched — this whole branch is phone-only. */
-          model.rotation.x = 90 * DEG
         }
         const box = new THREE.Box3().setFromObject(model)
         const center = box.getCenter(new THREE.Vector3())
@@ -376,7 +376,7 @@ export default function PinnedScreen({
         restX = aspect < 0.9 ? 0 : halfW * 0.45
         restY = 0
         pivot.position.set(restX, restY, 0)
-        spinner.rotation.y = portalScreen.model().yawDeg * DEG
+        spinner.rotation.y = IS_TOUCH ? ROBOT_YAW : portalScreen.model().yawDeg * DEG
         zInside = 2.2
         return
       }
@@ -384,7 +384,7 @@ export default function PinnedScreen({
       const m = portalScreen.model()
 
       /* yaw-aware extents */
-      const yaw = m.yawDeg * DEG
+      const yaw = (IS_TOUCH ? ROBOT_YAW : m.yawDeg * DEG)
       const cosY = Math.cos(yaw)
       const sinY = Math.sin(yaw)
       let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity
@@ -591,8 +591,8 @@ export default function PinnedScreen({
          matrix-math and filter work that otherwise drives scroll jank. */
       if (!isInside && renderer && dims.ready) {
         const m = portalScreen.model()
-        const restYaw = m.yawDeg * DEG
-        const targetYaw = -90 * DEG // front face of monitor & keyboard faces forward (+Z)
+        const restYaw = IS_TOUCH ? ROBOT_YAW : m.yawDeg * DEG
+        const targetYaw = IS_TOUCH ? ROBOT_YAW : -90 * DEG // front faces forward (+Z)
 
         // dolly camera z
         camera.position.z = CAM_REST_Z - eEnter * (CAM_REST_Z - zInside)
