@@ -131,6 +131,7 @@ export default function Design() {
   // Touch swipe support for mobile photo carousel with debounce lock
   const touchStartX = useRef<number | null>(null)
   const touchStartY = useRef<number | null>(null)
+  const isSwiping = useRef(false)
   const lastActionTimestamp = useRef<number>(0)
 
   // Next / Prev photo handlers (strictly cycles photos within the current piece)
@@ -138,7 +139,7 @@ export default function Design() {
     e?.preventDefault()
     e?.stopPropagation()
     const now = Date.now()
-    if (now - lastActionTimestamp.current < 400) return
+    if (now - lastActionTimestamp.current < 450) return
     lastActionTimestamp.current = now
 
     if (pieceImages.length > 1) {
@@ -150,7 +151,7 @@ export default function Design() {
     e?.preventDefault()
     e?.stopPropagation()
     const now = Date.now()
-    if (now - lastActionTimestamp.current < 400) return
+    if (now - lastActionTimestamp.current < 450) return
     lastActionTimestamp.current = now
 
     if (pieceImages.length > 1) {
@@ -164,26 +165,34 @@ export default function Design() {
     if ((e.target as HTMLElement).closest('button')) {
       touchStartX.current = null
       touchStartY.current = null
+      isSwiping.current = false
       return
     }
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
+    if (e.touches.length === 1) {
+      touchStartX.current = e.touches[0].clientX
+      touchStartY.current = e.touches[0].clientY
+      isSwiping.current = true
+    }
   }
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null || touchStartY.current === null) return
+    if (!isSwiping.current || touchStartX.current === null || touchStartY.current === null) {
+      isSwiping.current = false
+      return
+    }
     const diffX = e.changedTouches[0].clientX - touchStartX.current
     const diffY = e.changedTouches[0].clientY - touchStartY.current
     touchStartX.current = null
     touchStartY.current = null
+    isSwiping.current = false
 
     // Ignore if touched directly on a control button or thumbnail
     if ((e.target as HTMLElement).closest('button')) return
 
     const now = Date.now()
-    if (now - lastActionTimestamp.current < 400) return
+    if (now - lastActionTimestamp.current < 450) return
 
-    if (pieceImages.length > 1 && Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY) * 1.3) {
+    if (pieceImages.length > 1 && Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY) * 1.3) {
       lastActionTimestamp.current = now
       if (diffX < 0) {
         // Swiped left -> Next photo
@@ -337,17 +346,26 @@ export default function Design() {
             >
               {/* Left: Artwork Display showing 100% of the artwork uncropped */}
               <div
-                className="relative flex-1 bg-night flex flex-col items-center justify-center p-3 sm:p-6 select-none overflow-hidden min-h-[260px] md:min-h-[520px]"
+                className="relative flex-1 bg-night flex flex-col items-center justify-center p-3 sm:p-6 select-none"
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}
               >
-                <div className="relative w-full flex-1 flex items-center justify-center min-h-[220px] max-h-[50vh] md:max-h-[72vh]">
+                <div className="relative w-full flex items-center justify-center">
                   <img
                     key={currentImageUrl}
                     src={currentImageUrl}
                     alt={`${activePiece.title} - Image ${activeImageIndex + 1}`}
                     decoding="async"
-                    className="h-full w-full object-contain max-h-[50vh] md:max-h-[72vh] rounded-btn shadow-md transition-opacity duration-200"
+                    style={{
+                      maxHeight: 'min(62vh, 650px)',
+                      maxWidth: '100%',
+                      width: 'auto',
+                      height: 'auto',
+                      objectFit: 'contain',
+                      display: 'block',
+                      margin: '0 auto',
+                    }}
+                    className="rounded-btn shadow-md transition-opacity duration-200"
                   />
 
                   {/* Left & Right Navigation Arrows for cycling photos (ONLY when piece has multiple photos) */}
@@ -356,7 +374,7 @@ export default function Design() {
                       <button
                         type="button"
                         onClick={handlePrevPhoto}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 z-30 h-11 w-11 sm:h-10 sm:w-10 flex items-center justify-center rounded-full bg-black/70 text-white border border-white/40 shadow-xl backdrop-blur-md hover:bg-black/90 hover:scale-110 active:scale-95 transition-all cursor-pointer select-none"
+                        className="absolute left-2 top-1/2 -translate-y-1/2 z-30 h-11 w-11 sm:h-10 sm:w-10 flex items-center justify-center rounded-full bg-black/75 text-white border border-white/40 shadow-xl backdrop-blur-md hover:bg-black/90 hover:scale-110 active:scale-95 transition-all cursor-pointer select-none"
                         aria-label="Previous photo"
                       >
                         <span className="text-2xl font-bold leading-none select-none">‹</span>
@@ -364,13 +382,23 @@ export default function Design() {
                       <button
                         type="button"
                         onClick={handleNextPhoto}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 z-30 h-11 w-11 sm:h-10 sm:w-10 flex items-center justify-center rounded-full bg-black/70 text-white border border-white/40 shadow-xl backdrop-blur-md hover:bg-black/90 hover:scale-110 active:scale-95 transition-all cursor-pointer select-none"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 z-30 h-11 w-11 sm:h-10 sm:w-10 flex items-center justify-center rounded-full bg-black/75 text-white border border-white/40 shadow-xl backdrop-blur-md hover:bg-black/90 hover:scale-110 active:scale-95 transition-all cursor-pointer select-none"
                         aria-label="Next photo"
                       >
                         <span className="text-2xl font-bold leading-none select-none">›</span>
                       </button>
                     </>
                   )}
+
+                  {/* Mobile Direct Close Button */}
+                  <button
+                    type="button"
+                    onClick={() => setActivePiece(null)}
+                    className="absolute top-2 right-2 z-30 h-8 w-8 flex items-center justify-center rounded-full bg-black/70 text-white border border-white/30 md:hidden shadow-md"
+                    aria-label="Close modal"
+                  >
+                    ✕
+                  </button>
 
                   {/* Image Counter Badge when piece has multiple images */}
                   {pieceImages.length > 1 && (
