@@ -440,20 +440,9 @@ export default function Design() {
                   {/* Color Palette Specimen — Automatically extracted or saved */}
                   {displayPalette && displayPalette.length > 0 && (
                     <div className="surface-muted mt-5 p-4 rounded-btn">
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-ink-faint">
-                          Palette Breakdown
-                        </span>
-                        {extractingColors ? (
-                          <span className="font-mono text-[9px] uppercase text-ink-faint animate-pulse">
-                            Extracting colors…
-                          </span>
-                        ) : extractedPalette && extractedPalette.length > 0 ? (
-                          <span className="font-mono text-[9px] uppercase tracking-wider text-accent font-semibold">
-                            ✦ Auto-extracted
-                          </span>
-                        ) : null}
-                      </div>
+                      <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-ink-faint">
+                        Palette Breakdown
+                      </span>
 
                       {/* Continuous color specimen bar */}
                       <div className="mt-2 flex h-3.5 w-full overflow-hidden rounded border border-ink/15 shadow-paper-sm">
