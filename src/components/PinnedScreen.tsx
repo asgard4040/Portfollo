@@ -306,10 +306,11 @@ export default function PinnedScreen({
         measuredH = lastEl.offsetTop + lastEl.offsetHeight
       }
       const rawH = Math.max(measuredH, inner.scrollHeight, inner.offsetHeight)
-      const worldH = Math.max(rawH, 4800)
       const innerHeight = window.innerHeight || 800
+      // Add comfortable bottom scroll padding so the contact section and footer scroll completely into view
+      const worldH = Math.max(rawH + 200, 5200)
       const enterPx = Math.max(200, portalScreen.model().enterVh * innerHeight)
-      const travelMax = Math.max(3000, worldH - innerHeight)
+      const travelMax = Math.max(3400, worldH - innerHeight)
       const range = Math.max(1, enterPx + travelMax)
       const pEnter = enterPx / range
 
@@ -741,6 +742,24 @@ export default function PinnedScreen({
     window.addEventListener('scroll', onScroll, { passive: true })
     window.addEventListener('resize', frameMachine)
 
+    // Observe inner layout changes (images loading, dynamic content resizing)
+    const ro = new ResizeObserver(() => {
+      measure()
+      apply(window.scrollY)
+    })
+    ro.observe(inner)
+
+    const onImgLoad = () => {
+      measure()
+      apply(window.scrollY)
+    }
+    inner.addEventListener('load', onImgLoad, true)
+    window.addEventListener('load', onImgLoad)
+
+    const t1 = setTimeout(measure, 600)
+    const t2 = setTimeout(measure, 1500)
+    const t3 = setTimeout(measure, 3000)
+
     measure()
     apply(window.scrollY)
 
@@ -768,6 +787,11 @@ export default function PinnedScreen({
       cancelAnimationFrame(raf)
       destroyRouter()
       ro.disconnect()
+      inner.removeEventListener('load', onImgLoad, true)
+      window.removeEventListener('load', onImgLoad)
+      clearTimeout(t1)
+      clearTimeout(t2)
+      clearTimeout(t3)
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', frameMachine)
       gyro.dispose()

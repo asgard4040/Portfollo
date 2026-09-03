@@ -62,9 +62,9 @@ export default function Navigation() {
 
   const handleLinkClick = (href: string, e: React.MouseEvent) => {
     close()
+    const id = href.replace('#', '')
     if (isMobile) {
       e.preventDefault()
-      const id = href.replace('#', '')
       if (id === 'home') {
         window.scrollTo({ top: 0, behavior: 'smooth' })
         return
@@ -72,6 +72,12 @@ export default function Navigation() {
       const el = document.getElementById(id)
       if (el) {
         el.scrollIntoView({ behavior: 'smooth' })
+      }
+    } else {
+      const y = portalScreen.targetFor(id)
+      if (y !== null) {
+        e.preventDefault()
+        window.scrollTo({ top: y, behavior: 'smooth' })
       }
     }
   }

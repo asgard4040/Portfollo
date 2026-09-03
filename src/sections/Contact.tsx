@@ -20,23 +20,59 @@ export default function Contact() {
     e.preventDefault()
     setSending(true)
     setError(null)
-    if (!isSupabaseConfigured || !supabase) {
-      setError('Messaging is unavailable right now.')
-      setSending(false)
-      return
+
+    let success = false
+
+    // 1. Deliver message directly to aliemadnajm.iq@gmail.com via FormSubmit AJAX
+    try {
+      const response = await fetch('https://formsubmit.co/ajax/aliemadnajm.iq@gmail.com', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          message,
+          _subject: `Portfolio Message from ${name} (${email})`,
+        }),
+      })
+
+      if (response.ok) {
+        success = true
+      }
+    } catch (err) {
+      console.warn('FormSubmit email send error:', err)
     }
-    const { error: insertError } = await supabase
-      .from('contact_messages')
-      .insert({ name, email, message })
-    if (insertError) {
-      setError('Could not send your message. Please try again.')
-    } else {
+
+    // 2. Also backup to Supabase contact_messages if configured
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { error: insertError } = await supabase
+          .from('contact_messages')
+          .insert({ name, email, message })
+        if (!insertError) success = true
+      } catch (err) {
+        console.warn('Supabase contact_messages backup error:', err)
+      }
+    }
+
+    if (success) {
       setSent(true)
       setName('')
       setEmail('')
       setMessage('')
-      setTimeout(() => setSent(false), 4000)
+      setTimeout(() => setSent(false), 5000)
+    } else {
+      // Direct mailto fallback
+      window.location.href = `mailto:aliemadnajm.iq@gmail.com?subject=${encodeURIComponent(
+        `Portfolio Message from ${name}`,
+      )}&body=${encodeURIComponent(`${message}\n\nFrom: ${name} (${email})`)}`
+      setSent(true)
+      setTimeout(() => setSent(false), 5000)
     }
+
     setSending(false)
   }
 
@@ -51,8 +87,16 @@ export default function Contact() {
 
         <Reveal rot="-1deg">
           <div className="paper relative p-5 sm:p-10">
-            <Paperclip className="absolute -top-2 left-10 w-8 -rotate-12 text-ink-faint" />
-            <p className="font-hand text-2xl text-ink-faint">leave a note…</p>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <p className="font-hand text-2xl text-ink-faint">leave a note…</p>
+              <a
+                href="mailto:aliemadnajm.iq@gmail.com"
+                className="font-mono text-xs text-ink-faint hover:text-ink transition-colors flex items-center gap-1.5"
+              >
+                <span>aliemadnajm.iq@gmail.com</span>
+                <span>↗</span>
+              </a>
+            </div>
 
             {/* contact form → saves to Supabase */}
             <form className="mt-5 space-y-5" onSubmit={handleSubmit}>
