@@ -100,13 +100,14 @@ function mapDbContent(db: DbContent): SiteContent {
         caption: p.caption,
         category: p.category,
         code: p.code ?? undefined,
-        image: p.image ?? undefined,
-        storagePath: p.storage_path ?? undefined,
+        image: p.image ?? (p.images && p.images.length > 0 ? p.images[0] : undefined),
+        storagePath: p.storage_path ?? (p.images && p.images.length > 0 ? p.images[0] : undefined),
+        images: p.images && p.images.length > 0 ? p.images : (p.storage_path ? [p.storage_path] : (p.image ? [p.image] : [])),
         tags: p.tags ?? undefined,
         rotation: p.rotation,
         size: p.size as DesignPieceSize,
         art: p.art as DesignPieceArt,
-        palette: (p.palette ?? ['#14120e', '#f1efe7', '#8b8579']) as [string, string, string],
+        palette: p.palette && p.palette.length > 0 ? p.palette : ['#14120e', '#f1efe7', '#8b8579'],
       }))
     if (pieces.length) c.designPieces = pieces
   }

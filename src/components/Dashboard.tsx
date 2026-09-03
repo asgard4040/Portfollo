@@ -5,6 +5,9 @@ import { portalScreen } from '../portal/screen'
 import MockPreview from './MockPreview'
 import ImageUpload from './ImageUpload'
 import MultiImageUpload from './MultiImageUpload'
+import PaletteField from './PaletteField'
+import { getImageUrl } from '../utils/supabase/storage'
+import { extractPaletteFromImage } from '../utils/palette'
 import {
   IconPlus,
   IconTrash,
@@ -981,25 +984,43 @@ export default function Dashboard() {
                   <Field label="Rotation (e.g. -2.5deg)" value={p.rotation} onChange={(v) => setPiece(i, 'rotation', v)} />
                   <Select label="Size" value={p.size} options={['small', 'medium', 'large']} onChange={(v) => setPiece(i, 'size', v as DesignPiece['size'])} />
                   <Select label="Art style" value={p.art} options={arts} onChange={(v) => setPiece(i, 'art', v as DesignPiece['art'])} />
-                  <Field label="Palette 1 (dark)" value={p.palette[0]} onChange={(v) => setPiece(i, 'palette', [v, p.palette[1], p.palette[2]])} />
-                  <Field label="Palette 2 (paper)" value={p.palette[1]} onChange={(v) => setPiece(i, 'palette', [p.palette[0], v, p.palette[2]])} />
-                  <Field label="Palette 3 (mid)" value={p.palette[2]} onChange={(v) => setPiece(i, 'palette', [p.palette[0], p.palette[1], v])} />
                   <div className="sm:col-span-2">
-                    <span className="field-label">Gallery image</span>
-                    <ImageUpload
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <span className="field-label mb-0">Gallery Images (Multiple)</span>
+                      <span className="text-[11px] text-ink-faint">★ The first image is the card cover</span>
+                    </div>
+                    <MultiImageUpload
                       folder="gallery"
                       slug={p.id}
-                      currentPath={p.storagePath}
-                      aspectClass="aspect-[4/3]"
-                      label="Upload artwork"
-                      onUploaded={(path) => setPiece(i, 'storagePath', path)}
-                      onRemoved={() => setPiece(i, 'storagePath', undefined)}
+                      images={p.images && p.images.length > 0 ? p.images : (p.storagePath ? [p.storagePath] : (p.image ? [p.image] : []))}
+                      onChange={async (nextImages) => {
+                        setPiece(i, 'images', nextImages)
+                        const first = nextImages[0] ?? undefined
+                        setPiece(i, 'storagePath', first)
+                        setPiece(i, 'image', first)
+                        if (first) {
+                          const url = getImageUrl(first)
+                          if (url) {
+                            try {
+                              const colors = await extractPaletteFromImage(url, 4)
+                              if (colors && colors.length > 0) {
+                                setPiece(i, 'palette', colors)
+                              }
+                            } catch {}
+                          }
+                        }
+                      }}
                     />
                   </div>
+                  <PaletteField
+                    palette={p.palette ?? []}
+                    imageUrl={getImageUrl(p.storagePath || p.image || (p.images && p.images[0])) ?? undefined}
+                    onChange={(nextPalette) => setPiece(i, 'palette', nextPalette)}
+                  />
                 </div>
               </Card>
             ))}
-            <button type="button" onClick={() => set((prev) => ({ ...prev, designPieces: [...prev.designPieces, { id: `new-${Math.random().toString(36).slice(2, 6)}`, title: 'New piece', caption: 'caption', category: 'Misc', rotation: '2deg', size: 'medium', art: 'type', palette: ['#14120e', '#f1efe7', '#8b8579'] }] }))} className="btn btn-outline">
+            <button type="button" onClick={() => set((prev) => ({ ...prev, designPieces: [...prev.designPieces, { id: `new-${Math.random().toString(36).slice(2, 6)}`, title: 'New piece', caption: 'caption', category: 'Misc', rotation: '2deg', size: 'medium', art: 'type', palette: ['#14120E', '#F1EFE7', '#8B8579'], images: [] }] }))} className="btn btn-outline">
               <IconPlus className="h-4 w-4" /> Add piece
             </button>
           </div>

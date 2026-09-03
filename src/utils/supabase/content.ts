@@ -24,6 +24,7 @@ export interface DbDesignPiece {
   code: string | null
   image: string | null
   storage_path: string | null
+  images?: string[] | null
   tags: string[] | null
   rotation: string
   size: string
@@ -245,22 +246,26 @@ export async function saveAllContent(
       sort_order: i,
     }
   })
-  const pieceRows: Record<string, unknown>[] = content.designPieces.map((p, i) => ({
-    slug: p.id,
-    title: p.title,
-    caption: p.caption,
-    category: p.category,
-    code: p.code ?? null,
-    image: p.image ?? null,
-    storage_path: p.storagePath ?? null,
-    tags: p.tags ?? null,
-    rotation: p.rotation,
-    size: p.size,
-    art: p.art,
-    palette: p.palette as string[],
-    is_hero: false,
-    sort_order: i,
-  }))
+  const pieceRows: Record<string, unknown>[] = content.designPieces.map((p, i) => {
+    const images = p.images && p.images.length > 0 ? p.images : (p.storagePath ? [p.storagePath] : (p.image ? [p.image] : []))
+    return {
+      slug: p.id,
+      title: p.title,
+      caption: p.caption,
+      category: p.category,
+      code: p.code ?? null,
+      image: images[0] ?? p.image ?? null,
+      storage_path: images[0] ?? p.storagePath ?? null,
+      images: images,
+      tags: p.tags ?? null,
+      rotation: p.rotation,
+      size: p.size,
+      art: p.art,
+      palette: p.palette as string[],
+      is_hero: false,
+      sort_order: i,
+    }
+  })
   const journeyRows: Record<string, unknown>[] = content.about.journey.map((j, i) => ({
     year: j.year,
     text: j.text,
@@ -294,7 +299,17 @@ export async function saveAllContent(
     if (table === 'design_pieces') {
       // keep is_hero rows (the hero piece is not edited in the editor)
       await sb.from(table).delete().eq('is_hero', false)
-      return !(await sb.from(table).insert(rows)).error
+      const res = await sb.from(table).insert(rows)
+      if (res.error) {
+        // Fallback if "images" column has not been added to design_pieces yet
+        const fallbackRows = rows.map((r) => {
+          const { images: _ignored, ...rest } = r as { images?: unknown }
+          return rest
+        })
+        const retry = await sb.from(table).insert(fallbackRows)
+        return !retry.error
+      }
+      return !res.error
     }
     await sb.from(table).delete().gte('sort_order', 0)
     const res = await sb.from(table).insert(rows)

@@ -8,6 +8,7 @@ ALTER TABLE projects ADD COLUMN IF NOT EXISTS cover_image text;
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS images text[] DEFAULT '{}';
 ALTER TABLE profile ADD COLUMN IF NOT EXISTS photo_storage_path text;
 ALTER TABLE design_pieces ADD COLUMN IF NOT EXISTS storage_path text;
+ALTER TABLE design_pieces ADD COLUMN IF NOT EXISTS images text[] DEFAULT '{}';
 
 -- 2. Storage policies for the "images" bucket
 -- Public read: anyone can view images

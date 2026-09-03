@@ -6,11 +6,12 @@ export interface DesignPiece {
   code?: string
   image?: string
   storagePath?: string
+  images?: string[]
   tags?: string[]
   rotation: string
   size: 'small' | 'medium' | 'large'
   art: 'logo' | 'poster' | 'identity' | 'type' | 'manip' | 'motion' | 'ui' | 'stamp'
-  palette: [string, string, string]
+  palette: string[]
 }
 
 /* The gallery is intentionally empty by default — content is filled from

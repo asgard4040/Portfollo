@@ -86,6 +86,8 @@ CREATE TABLE IF NOT EXISTS design_pieces (
   category text NOT NULL DEFAULT '',
   code text,
   image text,
+  storage_path text,
+  images text[] DEFAULT '{}',
   tags text[] DEFAULT '{}',
   rotation text NOT NULL DEFAULT '0deg',
   size text NOT NULL DEFAULT 'medium' CHECK (size IN ('small', 'medium', 'large')),
