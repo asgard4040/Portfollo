@@ -210,24 +210,45 @@ export default function BackgroundFX() {
         }
       }
 
+      if (!running) return
       if (!reduced) raf = requestAnimationFrame(draw)
     }
 
-    const onVisibility = () => {
+    /* ---- pause when the effect isn't worth the frame cost ----
+       Stop animating during active scrolling, hidden tabs, and reduced
+       motion. The compositor/GPU stays free for scrolling — the #1 mobile
+       jank source. Rendering resumes once the user rests. */
+    let running = true
+    let scrollTimer = 0
+    const stop = () => {
+      running = false
       cancelAnimationFrame(raf)
-      if (!document.hidden) {
-        raf = requestAnimationFrame(draw)
-      }
     }
-
-    resize()
-    nodes = Array.from({ length: count }, spawnNode)
+    const start = () => {
+      if (running || reduced || document.hidden) return
+      running = true
+      raf = requestAnimationFrame(draw)
+    }
+    const onScrollResume = () => {
+      window.clearTimeout(scrollTimer)
+      stop()
+      scrollTimer = window.setTimeout(start, 120)
+    }
+    const onVisibility = () => {
+      if (document.hidden) stop()
+      else start()
+    }
+    window.addEventListener('scroll', onScrollResume, { passive: true })
     window.addEventListener('resize', resize)
     document.addEventListener('visibilitychange', onVisibility)
+    resize()
+    nodes = Array.from({ length: count }, spawnNode)
     raf = requestAnimationFrame(draw)
 
     return () => {
       cancelAnimationFrame(raf)
+      window.clearTimeout(scrollTimer)
+      window.removeEventListener('scroll', onScrollResume)
       window.removeEventListener('resize', resize)
       mouseCleanup?.()
       document.removeEventListener('visibilitychange', onVisibility)
