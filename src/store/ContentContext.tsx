@@ -6,7 +6,6 @@ import { designPieces } from '../data/design'
 import { aboutContent } from '../data/about'
 import { DEFAULT_MODEL3D, type Model3DSettings } from '../data/model3d'
 import { DEFAULT_THEME, type ThemeColors } from './colors'
-import { deriveTheme } from './colors'
 import { fetchAllContent, saveAllContent, type DbContent } from '../utils/supabase/content'
 
 export interface SiteContent {

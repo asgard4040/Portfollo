@@ -5,7 +5,6 @@ import { useGyroscope } from '../hooks/useGyroscope'
 import { useContent } from '../store/ContentContext'
 import { portalScreen, currentIdAt } from '../portal/screen'
 import { initRouter, destroyRouter } from '../portal/router'
-import BackgroundFX from './BackgroundFX'
 
 /* The "inside the computer" portal.
    The page starts with the Hero and 3D retro computer.
@@ -15,19 +14,7 @@ import BackgroundFX from './BackgroundFX'
    a luminous portal warp. Once inside, scrolling scrubs through the inner sections.
    Scrolling back up seamlessly reverses out of the screen back to the Hero pose. */
 
-/* Phones get a lightweight robot computer (0.43 MB) instead of the full CRT
-   machine (3.9 MB) — same hero, fraction of the download/GPU cost. Desktop is
-   untouched and keeps the original pc.glb. */
-const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
-const MODEL_URL =
-  (import.meta.env.BASE_URL || '/') + (IS_TOUCH ? 'robot_compuer.glb' : 'pc.glb')
-
-/* The phone robot's screen already faces forward (+Z, same direction as the
-   camera) in model space, so it must NOT inherit the desktop CRT's corrective
-   rest/target yaw (default -75°/ -90°) — that would spin it sideways. We place
-   it at a straight-on 20° yaw so it reads angled/turned toward the viewer;
-   desktop keeps its own values. */
-const ROBOT_YAW = (20 * Math.PI) / 180
+const MODEL_URL = (import.meta.env.BASE_URL || '/') + 'pc.glb'
 
 const CAM_FOV = 50
 const CAM_REST_Z = 7.5
@@ -112,7 +99,6 @@ export default function PinnedScreen({
   const hintRef = useRef<HTMLDivElement | null>(null)
   const insideChipRef = useRef<HTMLSpanElement | null>(null)
   const glassFxRef = useRef<HTMLDivElement | null>(null)
-  const videoRef = useRef<HTMLVideoElement | null>(null)
   const gyro = useGyroscope()
 
   /* mirror the saved settings into the live console the 3D effect reads */
@@ -191,28 +177,11 @@ export default function PinnedScreen({
       ready: false,
     }
     let worldScale = 1
-    /* On the phone robot, this is the screen/head — rotated by the gyroscope.
-       Null on desktop (unchanged behavior). */
-    let monitorHead: THREE.Object3D | null = null
 
-    /* Phones don't load a model at all — the video hero replaces the 3D
-       machine, so skip the download, parse and GPU work entirely. */
-    if (!IS_TOUCH) {
     new GLTFLoader()
       .loadAsync(MODEL_URL)
       .then((gltf) => {
         const model = gltf.scene
-        /* On the touch robot, capture the head node so the gyro can move just
-           the screen. Touching nothing on desktop. */
-        if (IS_TOUCH) {
-          monitorHead = (
-            model.getObjectByName('computer_monitor') ||
-            model.getObjectByName('Monitor') ||
-            model
-          )
-          /* slight resting pitch (x) so the robot leans toward the viewer */
-          model.rotation.x = (5 * Math.PI) / 180
-        }
         const box = new THREE.Box3().setFromObject(model)
         const center = box.getCenter(new THREE.Vector3())
         const maxDim = Math.max(
@@ -320,7 +289,6 @@ export default function PinnedScreen({
         apply(window.scrollY)
       })
       .catch(() => undefined)
-    }
 
     /* ---- layout + measurement ---- */
     let restX = 1.6
@@ -384,7 +352,7 @@ export default function PinnedScreen({
         restX = aspect < 0.9 ? 0 : halfW * 0.45
         restY = 0
         pivot.position.set(restX, restY, 0)
-        spinner.rotation.y = IS_TOUCH ? ROBOT_YAW : portalScreen.model().yawDeg * DEG
+        spinner.rotation.y = portalScreen.model().yawDeg * DEG
         zInside = 2.2
         return
       }
@@ -392,7 +360,7 @@ export default function PinnedScreen({
       const m = portalScreen.model()
 
       /* yaw-aware extents */
-      const yaw = (IS_TOUCH ? ROBOT_YAW : m.yawDeg * DEG)
+      const yaw = m.yawDeg * DEG
       const cosY = Math.cos(yaw)
       const sinY = Math.sin(yaw)
       let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity
@@ -537,10 +505,6 @@ export default function PinnedScreen({
     const quadV = [0, 1, 2, 3].map(() => new THREE.Vector3())
     const quadPx = [0, 1, 2, 3].map(() => ({ x: 0, y: 0 }))
 
-    /* smoothed gyro-driven head pose (last frame), so the screen glides to
-       you slowly instead of snapping/jerking with every sensor update */
-    const headCur = { x: 0, y: 0, z: 0 }
-
     /* Corners of the device-shaped rectangle that actually shows the page,
        fitted inside the glass: on a phone this is a portrait window, on a
        desktop it very nearly fills the glass. Returned in model space. */
@@ -588,45 +552,6 @@ export default function PinnedScreen({
       const isInside = y >= enterPx
       insideNow = isInside
 
-      /* Phones use a full-screen video hero (header.mp4) instead of the 3D
-         machine: no WebGL, no model, no portal. Keep the page beneath fully
-         visible and let the video fade out from the BOTTOM up as you scroll,
-         revealing the site. Desktop is untouched. */
-      if (IS_TOUCH) {
-        if (world) {
-          world.style.opacity = '1'
-          world.style.transform = 'none'
-          world.style.borderRadius = '0px'
-          world.style.pointerEvents = 'auto'
-          world.style.filter = 'none'
-          world.style.removeProperty('mask-image')
-          world.style.removeProperty('-webkit-mask-image')
-        }
-        /* The root is `fixed overflow-hidden`, so the page scrolls only via the
-           spacer in App.tsx. Content holds still while the hero video fades
-           (first enterPx), then scrolls up naturally to match the scroll. */
-        if (inner) {
-          inner.style.transform = `translate3d(0, ${-Math.max(0, y - enterPx)}px, 0)`
-        }
-        if (heroHost) {
-          heroHost.style.opacity = String(Math.max(0, 1 - eEnterRaw * 1.6))
-          heroHost.style.transform = `translate3d(0, ${-eEnterRaw * 40}px, 0)`
-          heroHost.style.pointerEvents = eEnterRaw > 0.98 ? 'none' : 'auto'
-        }
-        const vid = videoRef.current
-        if (vid) {
-          /* fade bottom-to-top: the opaque band is at the TOP and its bottom
-             edge climbs upward, so the bottom of the video disappears first and
-             the last bit to vanish is the top */
-          const h = Math.min(1, eEnterRaw * 1.35) // fraction hidden from the bottom
-          const stop = ((1 - h) * 100).toFixed(2)
-          const mask = `linear-gradient(to bottom, #000 0%, #000 ${stop}%, transparent ${stop}%, transparent 100%)`
-          vid.style.webkitMaskImage = mask
-          vid.style.maskImage = mask
-        }
-        return
-      }
-
       /* 1. Hero layer fading & floating out (only while it's on screen) */
       if (heroHost) {
         const heroFade = Math.min(1, Math.max(0, y / (enterPx * 0.55)))
@@ -642,8 +567,8 @@ export default function PinnedScreen({
          matrix-math and filter work that otherwise drives scroll jank. */
       if (!isInside && renderer && dims.ready) {
         const m = portalScreen.model()
-        const restYaw = IS_TOUCH ? ROBOT_YAW : m.yawDeg * DEG
-        const targetYaw = IS_TOUCH ? ROBOT_YAW : -90 * DEG // front faces forward (+Z)
+        const restYaw = m.yawDeg * DEG
+        const targetYaw = -90 * DEG // front faces forward (+Z)
 
         // dolly camera z
         camera.position.z = CAM_REST_Z - eEnter * (CAM_REST_Z - zInside)
@@ -658,14 +583,11 @@ export default function PinnedScreen({
           const swayFactor = 1 - eEnter
           const currentYaw = THREE.MathUtils.lerp(restYaw, targetYaw, eEnter)
           const idleYaw = idle ? Math.sin(performance.now() / 5000) * 0.08 * swayFactor : 0
-          /* lighter, smoother gyro sway on the whole robot — the phone's screen
-             itself already glides smoothly via the head (in tick), so the body
-             only needs a faint accent */
-          const gyroFactor = IS_TOUCH ? 0.12 : 0.3
+          const gyroFactor = 0.3
           const gyroYaw = idle ? gyro.sample().sway * gyroFactor * swayFactor : 0
           spinner.rotation.y = currentYaw + idleYaw + gyroYaw
 
-          const gyroFactorX = IS_TOUCH ? 0.14 : 0.35
+          const gyroFactorX = 0.35
           const gyroTilt = gyro.sample().tilt * gyroFactorX * swayFactor
           spinner.rotation.x = THREE.MathUtils.lerp(-0.04, 0, eEnter) + gyroTilt
         } else {
@@ -837,26 +759,6 @@ export default function PinnedScreen({
       const visible =
         !document.hidden && !REDUCED && !insideNow
       if (renderer && dims.ready && visible) {
-        /* On the phone robot, steer just the screen/head with the gyroscope so
-           it reacts to how you hold the device. Desktop never touches this. */
-        if (IS_TOUCH && monitorHead) {
-          const g = gyro.sample()
-          /* gentle idle rock so the head is clearly alive even before the gyro
-             grants permission — also a quick sanity check that the piece works */
-          const t = performance.now() / 1000
-          /* target pose: nod on the head's X (forward/back tilt) and turn on
-             its Y (left/right) — smoothed every frame so motion stays slow and
-             fluid regardless of how fast the gyro samples change */
-          const targetX = g.tilt * 0.6 + Math.sin(t * 1.2) * 0.04
-          const targetY = g.sway * 0.7 + Math.sin(t * 0.9) * 0.03
-          const targetZ = Math.sin(t * 0.5) * 0.015
-          headCur.x = THREE.MathUtils.lerp(headCur.x, targetX, 0.08)
-          headCur.y = THREE.MathUtils.lerp(headCur.y, targetY, 0.08)
-          headCur.z = THREE.MathUtils.lerp(headCur.z, targetZ, 0.08)
-          monitorHead.rotation.x = headCur.x
-          monitorHead.rotation.y = headCur.y
-          monitorHead.rotation.z = headCur.z
-        }
         renderer.render(scene, camera)
       }
     }
@@ -886,31 +788,14 @@ export default function PinnedScreen({
 
   return (
     <div ref={rootRef} className="fixed inset-0 z-[30] overflow-hidden">
-      {/* 3D machine (desktop) / full-screen header video (phone) */}
+      {/* 3D machine (desktop) */}
       <div ref={canvasHostRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />
-      {IS_TOUCH && (
-        <video
-          ref={videoRef}
-          className="pointer-events-none fixed inset-0 h-full w-full object-cover z-[60]"
-          src={(import.meta.env.BASE_URL || '/') + 'header.mp4'}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          aria-hidden="true"
-        />
-      )}
 
-      {/* Hero stage: floats over 3D room, fades smoothly on scroll.
-          On phones it sits above the header video (z-60) so the text/buttons
-          stay readable over the clip. */}
+      {/* Hero stage: floats over 3D room, fades smoothly on scroll */}
       {hero && (
         <div
           ref={heroHostRef}
-          className={`absolute inset-0 flex flex-col justify-start pt-20 sm:justify-center sm:pt-0 will-change-[transform,opacity] ${
-            IS_TOUCH ? 'z-[70]' : 'z-20'
-          }`}
+          className="absolute inset-0 z-20 flex flex-col justify-start pt-20 sm:justify-center sm:pt-0 will-change-[transform,opacity]"
         >
           {hero}
         </div>
@@ -927,10 +812,6 @@ export default function PinnedScreen({
           className="relative w-full min-h-full will-change-transform select-text"
           style={{ backgroundColor: 'var(--color-paper)' }}
         >
-          {/* animated background FX + constellation and particles across all sections */}
-          <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
-            <BackgroundFX />
-          </div>
 
           {/* tactile dot-grid pattern (identical to header / App.tsx) */}
           <div

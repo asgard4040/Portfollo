@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 function rgb(hex: string): [number, number, number] {
   let h = hex.replace('#', '').trim()
@@ -30,25 +30,37 @@ interface NodePoint {
 
 export default function BackgroundFX() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 768
+  })
 
   useEffect(() => {
+    const coarse = window.matchMedia('(pointer: coarse)')
+    const onResize = () => setIsMobile(coarse.matches || window.innerWidth < 768)
+    window.addEventListener('resize', onResize, { passive: true })
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  useEffect(() => {
+    // If on mobile or user prefers reduced motion, do not create canvas or loop
+    if (isMobile) return
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduced) return
+
     const canvas = canvasRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const coarse = window.matchMedia('(pointer: coarse)').matches
-    /* Phones: lower-res canvas + fewer nodes. Touch has no hover so the
-       constellation/mouse interaction is pointless there anyway. */
-    const dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1 : 2)
+    const dpr = Math.min(window.devicePixelRatio || 1, 2)
     let width = 0
     let height = 0
     let raf = 0
     let mouse = { x: -1000, y: -1000, targetX: -1000, targetY: -1000 }
     let time = 0
 
-    const count = reduced ? 0 : coarse ? 34 : 65
+    const count = 55
     let nodes: NodePoint[] = []
 
     const spawnNode = (): NodePoint => {
@@ -82,22 +94,15 @@ export default function BackgroundFX() {
       mouse.targetY = e.clientY
     }
 
-    /* hover interaction is desktop-only; on touch there's no cursor to follow */
-    let mouseCleanup: (() => void) | null = null
-    if (!coarse) {
-      window.addEventListener('mousemove', onMouseMove, { passive: true })
-      mouseCleanup = () => window.removeEventListener('mousemove', onMouseMove)
-    }
+    window.addEventListener('mousemove', onMouseMove, { passive: true })
 
     const draw = () => {
       time += 0.015
       ctx.clearRect(0, 0, width, height)
 
-      // Smooth mouse follow (skipped on touch — no cursor)
-      if (mouseCleanup) {
-        mouse.x += (mouse.targetX - mouse.x) * 0.08
-        mouse.y += (mouse.targetY - mouse.y) * 0.08
-      }
+      // Smooth mouse follow
+      mouse.x += (mouse.targetX - mouse.x) * 0.08
+      mouse.y += (mouse.targetY - mouse.y) * 0.08
 
       const { ink } = readTheme()
       const inkRgb = `${ink[0]}, ${ink[1]}, ${ink[2]}`
@@ -210,13 +215,9 @@ export default function BackgroundFX() {
       }
 
       if (!running) return
-      if (!reduced) raf = requestAnimationFrame(draw)
+      raf = requestAnimationFrame(draw)
     }
 
-    /* ---- pause when the effect isn't worth the frame cost ----
-       Stop animating during active scrolling, hidden tabs, and reduced
-       motion. The compositor/GPU stays free for scrolling — the #1 mobile
-       jank source. Rendering resumes once the user rests. */
     let running = true
     let scrollTimer = 0
     const stop = () => {
@@ -224,10 +225,7 @@ export default function BackgroundFX() {
       cancelAnimationFrame(raf)
     }
     const start = () => {
-      if (running || reduced || document.hidden) return
-      /* touch keeps a single static frame — never restart the animation loop,
-         so the GPU stays free while the user scrolls the video/content */
-      if (coarse) return
+      if (running || document.hidden) return
       running = true
       raf = requestAnimationFrame(draw)
     }
@@ -245,30 +243,24 @@ export default function BackgroundFX() {
     document.addEventListener('visibilitychange', onVisibility)
     resize()
     nodes = Array.from({ length: count }, spawnNode)
-    if (coarse) {
-      /* Touch: the portal is a video hero, so the animated canvas behind it is
-         pure cost with no benefit. Paint one static frame, then stop the loop
-         entirely — keeps the GPU free and the phone cool/smooth. */
-      draw()
-      running = false
-    } else {
-      raf = requestAnimationFrame(draw)
-    }
+    raf = requestAnimationFrame(draw)
 
     return () => {
       cancelAnimationFrame(raf)
       window.clearTimeout(scrollTimer)
       window.removeEventListener('scroll', onScrollResume)
       window.removeEventListener('resize', resize)
-      mouseCleanup?.()
+      window.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('visibilitychange', onVisibility)
     }
-  }, [])
+  }, [isMobile])
+
+  if (isMobile) return null
 
   return (
     <canvas
       ref={canvasRef}
-      className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-100"
+      className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-100 hidden md:block"
       style={{ mixBlendMode: 'multiply' }}
       aria-hidden="true"
     />

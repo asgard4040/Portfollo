@@ -1,5 +1,5 @@
 import { supabase } from './client'
-import type { SiteContent } from '../store/ContentContext'
+import type { SiteContent } from '../../store/ContentContext'
 
 export interface DbProject {
   slug: string
@@ -39,6 +39,12 @@ export interface DbAboutJourney {
 }
 
 export interface DbNav {
+  label: string
+  href: string
+  sort_order: number
+}
+
+export interface DbSocial {
   label: string
   href: string
   sort_order: number
@@ -95,7 +101,7 @@ export interface DbModel3D {
 export interface DbContent {
   profile: DbProfile | null
   nav: DbNav[]
-  social: DbSkill[]
+  social: DbSocial[]
   codeSkills: DbSkill[]
   designSkills: DbSkill[]
   tools: DbTool[]
@@ -108,7 +114,8 @@ export interface DbContent {
 }
 
 export async function fetchAllContent(): Promise<DbContent | null> {
-  if (!supabase) return null
+  const sb = supabase
+  if (!sb) return null
 
   const [
     profile,
@@ -124,18 +131,18 @@ export async function fetchAllContent(): Promise<DbContent | null> {
     theme,
     model3d,
   ] = await Promise.all([
-    supabase.from('profile').select('*').limit(1).maybeSingle(),
-    supabase.from('nav_items').select('*').order('sort_order'),
-    supabase.from('social_links').select('*').order('sort_order'),
-    supabase.from('code_skills').select('*').order('sort_order'),
-    supabase.from('design_skills').select('*').order('sort_order'),
-    supabase.from('tools').select('*').order('sort_order'),
-    supabase.from('projects').select('*').order('sort_order'),
-    supabase.from('design_pieces').select('*').order('sort_order'),
-    supabase.from('about').select('*').limit(1).maybeSingle(),
-    supabase.from('about_journey').select('*').order('sort_order'),
-    supabase.from('theme_colors').select('*').limit(1).maybeSingle(),
-    supabase.from('model_3d_settings').select('*').limit(1).maybeSingle(),
+    sb.from('profile').select('*').limit(1).maybeSingle(),
+    sb.from('nav_items').select('*').order('sort_order'),
+    sb.from('social_links').select('*').order('sort_order'),
+    sb.from('code_skills').select('*').order('sort_order'),
+    sb.from('design_skills').select('*').order('sort_order'),
+    sb.from('tools').select('*').order('sort_order'),
+    sb.from('projects').select('*').order('sort_order'),
+    sb.from('design_pieces').select('*').order('sort_order'),
+    sb.from('about').select('*').limit(1).maybeSingle(),
+    sb.from('about_journey').select('*').order('sort_order'),
+    sb.from('theme_colors').select('*').limit(1).maybeSingle(),
+    sb.from('model_3d_settings').select('*').limit(1).maybeSingle(),
   ])
 
   const errors = [
@@ -159,7 +166,7 @@ export async function fetchAllContent(): Promise<DbContent | null> {
   return {
     profile: (profile.data as DbProfile) ?? null,
     nav: (nav.data as DbNav[]) ?? [],
-    social: (social.data as DbSkill[]) ?? [],
+    social: (social.data as DbSocial[]) ?? [],
     codeSkills: (codeSkills.data as DbSkill[]) ?? [],
     designSkills: (designSkills.data as DbSkill[]) ?? [],
     tools: (tools.data as DbTool[]) ?? [],
@@ -179,7 +186,8 @@ export async function fetchAllContent(): Promise<DbContent | null> {
 export async function saveAllContent(
   content: SiteContent,
 ): Promise<{ ok: boolean; error?: string }> {
-  if (!supabase) return { ok: false, error: 'Supabase is not configured' }
+  const sb = supabase
+  if (!sb) return { ok: false, error: 'Supabase is not configured' }
 
   const profileRow: DbProfile = {
     name: content.profile.name,
@@ -214,12 +222,12 @@ export async function saveAllContent(
     sway: content.model3D.sway,
     enter_vh: content.model3D.enterVh,
   }
-  const navRows = content.nav.map((n, i) => ({ label: n.label, href: n.href, sort_order: i }))
-  const socialRows = content.social.map((s, i) => ({ label: s.label, href: s.href, sort_order: i }))
-  const codeRows = content.codeSkills.map((s, i) => ({ name: s.name, note: s.note ?? null, sort_order: i }))
-  const designRows = content.designSkills.map((s, i) => ({ name: s.name, note: s.note ?? null, sort_order: i }))
-  const toolRows = content.tools.map((t, i) => ({ name: t, sort_order: i }))
-  const projectRows: DbProject[] = content.projects.map((p, i) => ({
+  const navRows: Record<string, unknown>[] = content.nav.map((n, i) => ({ label: n.label, href: n.href, sort_order: i }))
+  const socialRows: Record<string, unknown>[] = content.social.map((s, i) => ({ label: s.label, href: s.href, sort_order: i }))
+  const codeRows: Record<string, unknown>[] = content.codeSkills.map((s, i) => ({ name: s.name, note: s.note ?? null, sort_order: i }))
+  const designRows: Record<string, unknown>[] = content.designSkills.map((s, i) => ({ name: s.name, note: s.note ?? null, sort_order: i }))
+  const toolRows: Record<string, unknown>[] = content.tools.map((t, i) => ({ name: t, sort_order: i }))
+  const projectRows: Record<string, unknown>[] = content.projects.map((p, i) => ({
     slug: p.id,
     meta: p.meta,
     title: p.title,
@@ -232,7 +240,7 @@ export async function saveAllContent(
     cover_image: p.coverImage ?? null,
     sort_order: i,
   }))
-  const pieceRows: DbDesignPiece[] = content.designPieces.map((p, i) => ({
+  const pieceRows: Record<string, unknown>[] = content.designPieces.map((p, i) => ({
     slug: p.id,
     title: p.title,
     caption: p.caption,
@@ -248,7 +256,7 @@ export async function saveAllContent(
     is_hero: false,
     sort_order: i,
   }))
-  const journeyRows = content.about.journey.map((j, i) => ({
+  const journeyRows: Record<string, unknown>[] = content.about.journey.map((j, i) => ({
     year: j.year,
     text: j.text,
     sort_order: i,
@@ -271,6 +279,7 @@ export async function saveAllContent(
     design_skills: designRows,
     tools: toolRows,
     projects: projectRows,
+    design_pieces: pieceRows,
     about_journey: journeyRows,
   }
 
@@ -279,11 +288,11 @@ export async function saveAllContent(
     const rows = rowSets[table] ?? []
     if (table === 'design_pieces') {
       // keep is_hero rows (the hero piece is not edited in the editor)
-      await supabase.from(table).delete().eq('is_hero', false)
-      return !(await supabase.from(table).insert(rows)).error
+      await sb.from(table).delete().eq('is_hero', false)
+      return !(await sb.from(table).insert(rows)).error
     }
-    await supabase.from(table).delete().gte('sort_order', 0)
-    return !(await supabase.from(table).insert(rows)).error
+    await sb.from(table).delete().gte('sort_order', 0)
+    return !(await sb.from(table).insert(rows)).error
   })
 
   const listResults = await Promise.all(listOps)
@@ -298,15 +307,15 @@ export async function saveAllContent(
 
   const singleResults = await Promise.all(
     singleOps.map(async ([table, row]) => {
-      const { data } = await supabase.from(table).select('id').limit(1).maybeSingle()
+      const { data } = await sb.from(table).select('id').limit(1).maybeSingle()
       if (data && (data as { id: string }).id) {
-        const { error } = await supabase
+        const { error } = await sb
           .from(table)
           .update(row as never)
           .eq('id', (data as { id: string }).id)
         return !error
       }
-      const { error } = await supabase.from(table).insert([row as never])
+      const { error } = await sb.from(table).insert([row as never])
       return !error
     }),
   )

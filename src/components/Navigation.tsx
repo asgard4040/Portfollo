@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useContent } from '../store/ContentContext'
 import { portalScreen } from '../portal/screen'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { Icon, navIcon, IconArrowUpRight, IconMenu, IconX } from './icons'
 
 export default function Navigation() {
   const { content } = useContent()
+  const isMobile = useIsMobile()
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [active, setActive] = useState('#home')
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -15,20 +18,38 @@ export default function Navigation() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  /* active section comes from the portal scroll math: the inner sections
-     live inside the pinned screen, so scrollTo/IntersectionObserver can't
-     track them — the screen module maps scrollY to the section on screen */
-  const [active, setActive] = useState('#home')
+  /* Active section tracking:
+     - On desktop, mapped via portalScreen coordinate math.
+     - On mobile, tracked natively via IntersectionObserver on the document sections. */
   useEffect(() => {
-    const update = () => setActive(`#${portalScreen.status()}`)
-    update()
-    window.addEventListener('scroll', update, { passive: true })
-    window.addEventListener('resize', update)
-    return () => {
-      window.removeEventListener('scroll', update)
-      window.removeEventListener('resize', update)
+    if (!isMobile) {
+      const update = () => setActive(`#${portalScreen.status()}`)
+      update()
+      window.addEventListener('scroll', update, { passive: true })
+      window.addEventListener('resize', update)
+      return () => {
+        window.removeEventListener('scroll', update)
+        window.removeEventListener('resize', update)
+      }
     }
-  }, [])
+
+    const sections = document.querySelectorAll('section[id]')
+    if (!sections.length) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActive(`#${entry.target.id}`)
+          }
+        })
+      },
+      { rootMargin: '-20% 0px -60% 0px', threshold: 0 },
+    )
+
+    sections.forEach((s) => observer.observe(s))
+    return () => observer.disconnect()
+  }, [isMobile])
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
@@ -38,6 +59,22 @@ export default function Navigation() {
   }, [open])
 
   const close = () => setOpen(false)
+
+  const handleLinkClick = (href: string, e: React.MouseEvent) => {
+    close()
+    if (isMobile) {
+      e.preventDefault()
+      const id = href.replace('#', '')
+      if (id === 'home') {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        return
+      }
+      const el = document.getElementById(id)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+  }
 
   return (
     <>
@@ -55,7 +92,11 @@ export default function Navigation() {
             }`}
           >
             {/* Brand */}
-            <a href="#home" className="flex items-baseline gap-2" onClick={close}>
+            <a
+              href="#home"
+              className="flex items-baseline gap-2"
+              onClick={(e) => handleLinkClick('#home', e)}
+            >
               <span className="display text-xl text-ink sm:text-2xl">{content.profile.name}</span>
               <span className="hidden -translate-y-0.5 font-hand text-base text-ink-faint lg:inline">
                 — dev &amp; designer
@@ -73,6 +114,7 @@ export default function Navigation() {
                   <a
                     key={item.href}
                     href={item.href}
+                    onClick={(e) => handleLinkClick(item.href, e)}
                     aria-current={isActive ? 'page' : undefined}
                     className={`micro-label flex items-center gap-1.5 rounded-full px-3.5 py-2 transition-all duration-200 ${
                       isActive
@@ -91,6 +133,7 @@ export default function Navigation() {
             <div className="flex items-center gap-2">
               <a
                 href="#contact"
+                onClick={(e) => handleLinkClick('#contact', e)}
                 className="btn btn-outline btn-round btn-sm hidden lg:inline-flex"
               >
                 Let&apos;s talk
@@ -155,7 +198,7 @@ export default function Navigation() {
                   <a
                     key={item.href}
                     href={item.href}
-                    onClick={close}
+                    onClick={(e) => handleLinkClick(item.href, e)}
                     aria-current={isActive ? 'page' : undefined}
                     className={`group flex min-h-[3.25rem] items-center justify-between rounded-btn px-3 transition-colors ${
                       isActive
@@ -188,7 +231,7 @@ export default function Navigation() {
               </p>
               <a
                 href="#contact"
-                onClick={close}
+                onClick={(e) => handleLinkClick('#contact', e)}
                 className="btn btn-solid btn-round btn-sm"
               >
                 Contact
