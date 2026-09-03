@@ -304,7 +304,7 @@
     stroke-dashoffset: 140;
   }
   .in-view .draw-path {
-    animation: draw 1.2s var(--ease-paper) forwards 0.3s;
+    animation: draw 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards 0.05s;
   }
 
   /* Paper sheet with subtle grain + soft shadow */
@@ -485,5 +485,12 @@
   /* shorter reveal travel so cards don't jump on a small viewport */
   .reveal:not(.in-view) {
     transform: translateY(16px) rotate(var(--reveal-rot, 0deg));
+  }
+
+  /* On phones: render section lines immediately without delayed/stuttering dash animation */
+  .draw-path {
+    stroke-dasharray: none !important;
+    stroke-dashoffset: 0 !important;
+    animation: none !important;
   }
 }
