@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import Reveal from '../components/Reveal'
-import { heroPiece, designPieces, type DesignPiece } from '../data/design'
+import { designPieces, type DesignPiece } from '../data/design'
 import { useContent } from '../store/ContentContext'
 import { getImageUrl } from '../utils/supabase/storage'
 
@@ -15,8 +15,13 @@ export default function Design() {
       : designPieces
   }, [content.designPieces])
 
-  // Full gallery list including heroPiece for lightbox navigation
-  const fullList = useMemo(() => [heroPiece, ...allPieces], [allPieces])
+  // Full gallery list (no placeholder hero) for lightbox navigation.
+  // The hero featured piece is only promoted from the first real piece.
+  const fullList = useMemo<DesignPiece[]>(
+    () => (allPieces.length > 0 ? allPieces : []),
+    [allPieces],
+  )
+  const heroPieceRef = allPieces.length > 0 ? allPieces[0] : null
 
   // Keyboard navigation for lightbox
   useEffect(() => {
@@ -78,25 +83,27 @@ export default function Design() {
           </span>
         </Reveal>
 
-        {/* Hero Wide Panoramic Featured Image */}
-        <Reveal className="mt-8">
-          <div
-            onClick={() => setActivePiece(heroPiece)}
-            className="surface surface-lift group relative aspect-[16/9] w-full cursor-pointer overflow-hidden bg-night sm:aspect-[21/9]"
-          >
-            <img
-              src={getImageUrl(heroPiece.storagePath, heroPiece.image)}
-              alt={heroPiece.title}
-              decoding="async"
-              className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-            />
-            <div className="absolute inset-0 flex items-center justify-center bg-night/35 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-              <span className="chip chip-strong backdrop-blur-sm">
-                View Editorial
-              </span>
+        {/* Hero Wide Panoramic Featured Image (first real piece) */}
+        {heroPieceRef && (
+          <Reveal className="mt-8">
+            <div
+              onClick={() => setActivePiece(heroPieceRef)}
+              className="surface surface-lift group relative aspect-[16/9] w-full cursor-pointer overflow-hidden bg-night sm:aspect-[21/9]"
+            >
+              <img
+                src={getImageUrl(heroPieceRef.storagePath, heroPieceRef.image)}
+                alt={heroPieceRef.title}
+                decoding="async"
+                className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+              />
+              <div className="absolute inset-0 flex items-center justify-center bg-night/35 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                <span className="chip chip-strong backdrop-blur-sm">
+                  View Editorial
+                </span>
+              </div>
             </div>
-          </div>
-        </Reveal>
+          </Reveal>
+        )}
 
         {/* Sub-Nav Bar: PREV / NEXT style editorial strip without filters */}
         <Reveal className="mt-6 flex items-center justify-between border-y border-line py-2 font-mono text-xs font-bold uppercase tracking-wider text-ink">
@@ -128,6 +135,14 @@ export default function Design() {
         </Reveal>
 
         {/* 2-Column Editorial Grid */}
+        {allPieces.length === 0 ? (
+          <Reveal className="mt-10 flex flex-col items-center gap-3 py-16 text-center">
+            <span className="chip chip-strong">EMPTY ARCHIVE</span>
+            <p className="font-mono text-sm text-ink-faint">
+              No design pieces have been added yet. Manage them from the dashboard.
+            </p>
+          </Reveal>
+        ) : (
         <div className="mt-10 grid grid-cols-1 gap-6 sm:mt-12 md:grid-cols-2 md:gap-x-8 md:gap-y-12">
           {allPieces.map((piece, i) => (
             <Reveal key={piece.id} delay={i * 70}>
@@ -167,6 +182,7 @@ export default function Design() {
             </Reveal>
           ))}
         </div>
+        )}
       </div>
 
       {/* Lightbox Modal */}
