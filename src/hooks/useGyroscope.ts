@@ -28,29 +28,42 @@ export function useGyroscope() {
     const coarse = window.matchMedia('(pointer: coarse)').matches
     if (!coarse) return
 
+    const D = window.DeviceOrientationEvent as unknown as
+      | { requestPermission?: () => Promise<string> }
+      | undefined
+    const needsRequest =
+      !!D && typeof D.requestPermission === 'function'
+
     const request = () => {
-      const D = window.DeviceOrientationEvent as unknown as
-        | { requestPermission?: () => Promise<string> }
-        | undefined
-      if (D && typeof D.requestPermission === 'function') {
-        D.requestPermission()
-          .then((p) => p === 'granted' && attach())
-          .catch(() => undefined)
+      if (available.current || disposed.current) return
+      /* anything other than 'granted' (pending/denied) is a no-op */
+      if (needsRequest) {
+        D!.requestPermission!()
+          .then((p) => {
+            if (p === 'granted') attach()
+          })
+          .catch(() => {
+            /* denied or not a gesture — retry on the next interaction */
+          })
       } else {
         attach()
       }
     }
 
-    /* iOS needs a user gesture; any tap enables tilt */
-    const onDown = () => {
-      request()
-      window.removeEventListener('pointerdown', onDown)
-    }
-    window.addEventListener('pointerdown', onDown)
+    /* Re-arm on any gesture: iOS needs a user gesture for the permission
+       prompt, and it must fire inside one. Listen to pointer/touch/scroll so
+       the very first interaction (which is often a scroll on mobile) works. */
+    const arm = () => request()
+    window.addEventListener('pointerdown', arm)
+    window.addEventListener('touchstart', arm)
+    window.addEventListener('scroll', arm, { passive: true })
+    /* Some Android WebViews deliver events without any gesture; try once. */
     request()
 
     return () => {
-      window.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('pointerdown', arm)
+      window.removeEventListener('touchstart', arm)
+      window.removeEventListener('scroll', arm)
     }
   }, [])
 
