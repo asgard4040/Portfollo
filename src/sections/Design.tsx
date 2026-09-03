@@ -27,6 +27,63 @@ export default function Design() {
     [allPieces],
   )
   const heroPieceRef = allPieces.length > 0 ? allPieces[0] : null
+  const activeIndex = activePiece ? fullList.findIndex((p) => p.id === activePiece.id) : -1
+
+  const pieceImages = useMemo(() => {
+    if (!activePiece) return []
+    if (activePiece.images && activePiece.images.length > 0) return activePiece.images
+    if (activePiece.storagePath) return [activePiece.storagePath]
+    if (activePiece.image) return [activePiece.image]
+    return []
+  }, [activePiece])
+
+  useEffect(() => {
+    setActiveImageIndex(0)
+  }, [activePiece?.id])
+
+  const currentPieceImage = pieceImages[activeImageIndex] || (activePiece?.storagePath || activePiece?.image)
+  const currentImageUrl = currentPieceImage ? getImageUrl(currentPieceImage) : ''
+
+  // Automatic Color Extraction from the active displayed image
+  useEffect(() => {
+    if (!activePiece || !currentImageUrl) {
+      setExtractedPalette(null)
+      setExtractingColors(false)
+      return
+    }
+
+    let isMounted = true
+    setExtractingColors(true)
+
+    extractPaletteFromImage(currentImageUrl, 4)
+      .then((colors) => {
+        if (isMounted) {
+          if (colors && colors.length > 0) {
+            setExtractedPalette(colors)
+          } else {
+            setExtractedPalette(null)
+          }
+          setExtractingColors(false)
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setExtractedPalette(null)
+          setExtractingColors(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [activePiece, currentImageUrl])
+
+  const displayPalette =
+    extractedPalette && extractedPalette.length > 0
+      ? extractedPalette
+      : activePiece?.palette && activePiece.palette.length > 0
+      ? activePiece.palette
+      : ['#14120E', '#F1EFE7', '#8B8579']
 
   // Keyboard navigation for lightbox
   useEffect(() => {
@@ -73,8 +130,6 @@ export default function Design() {
     setCopiedHex(hex)
     setTimeout(() => setCopiedHex(null), 1500)
   }
-
-  const activeIndex = activePiece ? fullList.findIndex((p) => p.id === activePiece.id) : -1
 
   return (
     <section id="design" className="relative z-10 border-b border-line bg-paper py-20 sm:py-28">
