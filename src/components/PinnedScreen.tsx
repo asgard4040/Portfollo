@@ -602,6 +602,12 @@ export default function PinnedScreen({
           world.style.removeProperty('mask-image')
           world.style.removeProperty('-webkit-mask-image')
         }
+        /* The root is `fixed overflow-hidden`, so the page scrolls only via the
+           spacer in App.tsx. Content holds still while the hero video fades
+           (first enterPx), then scrolls up naturally to match the scroll. */
+        if (inner) {
+          inner.style.transform = `translate3d(0, ${-Math.max(0, y - enterPx)}px, 0)`
+        }
         if (heroHost) {
           heroHost.style.opacity = String(Math.max(0, 1 - eEnterRaw * 1.6))
           heroHost.style.transform = `translate3d(0, ${-eEnterRaw * 40}px, 0)`
@@ -896,11 +902,15 @@ export default function PinnedScreen({
         />
       )}
 
-      {/* Hero stage: floats over 3D room, fades smoothly on scroll */}
+      {/* Hero stage: floats over 3D room, fades smoothly on scroll.
+          On phones it sits above the header video (z-60) so the text/buttons
+          stay readable over the clip. */}
       {hero && (
         <div
           ref={heroHostRef}
-          className="absolute inset-0 z-20 flex flex-col justify-start pt-20 sm:justify-center sm:pt-0 will-change-[transform,opacity]"
+          className={`absolute inset-0 flex flex-col justify-start pt-20 sm:justify-center sm:pt-0 will-change-[transform,opacity] ${
+            IS_TOUCH ? 'z-[70]' : 'z-20'
+          }`}
         >
           {hero}
         </div>
