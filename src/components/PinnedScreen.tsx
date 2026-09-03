@@ -129,7 +129,13 @@ export default function PinnedScreen({
       /* WebGL unavailable fallback */
     }
     if (renderer) {
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+      /* Coarse (touch) devices have high-dpi, power-hungry GPUs — cap the
+         pixel ratio lower so the full-screen WebGL canvas isn't rendered at
+         retina resolution every frame. Desktop keeps the crisp 2x cap. */
+      const coarse = window.matchMedia('(pointer: coarse)').matches
+      const mobileCap = coarse ? 1 : 2
+      const dprCap = REDUCED ? 1 : mobileCap
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, dprCap))
       renderer.domElement.style.width = '100%'
       renderer.domElement.style.height = '100%'
       canvasHost.appendChild(renderer.domElement)
@@ -289,6 +295,9 @@ export default function PinnedScreen({
     let restX = 1.6
     let restY = 0.0
     let zInside = 2.1
+    /* true once the user has fully entered the screen and the inner page (which
+       is opaque) covers the 3D machine — used to skip GPU renders then */
+    let insideNow = false
 
     const measure = () => {
       let measuredH = 0
@@ -586,6 +595,7 @@ export default function PinnedScreen({
             the viewport as the camera dollies in. The page always lays out at
             the real viewport size, so on a phone the glass shows a phone. */
       const isInside = y >= enterPx
+      insideNow = isInside
       const W = canvasHost.clientWidth
       const H = canvasHost.clientHeight
 
@@ -716,7 +726,12 @@ export default function PinnedScreen({
         lastRev = rev
         frameMachine()
       }
-      if (renderer && dims.ready) {
+      /* Skip the actual GPU render when the effect can't be seen: hidden tab,
+         reduced-motion, or fully entered the screen (the 3D is then covered by
+         the opaque inner page). Keeps phones cool and smooth. */
+      const visible =
+        !document.hidden && !REDUCED && !insideNow
+      if (renderer && dims.ready && visible) {
         renderer.render(scene, camera)
       }
     }

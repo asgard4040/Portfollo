@@ -38,14 +38,17 @@ export default function BackgroundFX() {
     if (!ctx) return
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const coarse = window.matchMedia('(pointer: coarse)').matches
+    /* Phones: lower-res canvas + fewer nodes. Touch has no hover so the
+       constellation/mouse interaction is pointless there anyway. */
+    const dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1 : 2)
     let width = 0
     let height = 0
     let raf = 0
     let mouse = { x: -1000, y: -1000, targetX: -1000, targetY: -1000 }
     let time = 0
 
-    const count = reduced ? 0 : 65
+    const count = reduced ? 0 : coarse ? 34 : 65
     let nodes: NodePoint[] = []
 
     const spawnNode = (): NodePoint => {
@@ -79,15 +82,22 @@ export default function BackgroundFX() {
       mouse.targetY = e.clientY
     }
 
-    window.addEventListener('mousemove', onMouseMove, { passive: true })
+    /* hover interaction is desktop-only; on touch there's no cursor to follow */
+    let mouseCleanup: (() => void) | null = null
+    if (!coarse) {
+      window.addEventListener('mousemove', onMouseMove, { passive: true })
+      mouseCleanup = () => window.removeEventListener('mousemove', onMouseMove)
+    }
 
     const draw = () => {
       time += 0.015
       ctx.clearRect(0, 0, width, height)
 
-      // Smooth mouse follow
-      mouse.x += (mouse.targetX - mouse.x) * 0.08
-      mouse.y += (mouse.targetY - mouse.y) * 0.08
+      // Smooth mouse follow (skipped on touch — no cursor)
+      if (mouseCleanup) {
+        mouse.x += (mouse.targetX - mouse.x) * 0.08
+        mouse.y += (mouse.targetY - mouse.y) * 0.08
+      }
 
       const { ink } = readTheme()
       const inkRgb = `${ink[0]}, ${ink[1]}, ${ink[2]}`
@@ -219,7 +229,7 @@ export default function BackgroundFX() {
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', resize)
-      window.removeEventListener('mousemove', onMouseMove)
+      mouseCleanup?.()
       document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [])

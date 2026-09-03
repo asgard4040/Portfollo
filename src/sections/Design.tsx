@@ -87,6 +87,7 @@ export default function Design() {
             <img
               src={getImageUrl(heroPiece.storagePath, heroPiece.image)}
               alt={heroPiece.title}
+              decoding="async"
               className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
             />
             <div className="absolute inset-0 flex items-center justify-center bg-night/35 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
@@ -140,6 +141,7 @@ export default function Design() {
                     src={getImageUrl(piece.storagePath, piece.image)}
                     alt={piece.title}
                     loading="lazy"
+                    decoding="async"
                     className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-night/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
@@ -189,6 +191,7 @@ export default function Design() {
               <img
                 src={getImageUrl(activePiece.storagePath, activePiece.image)}
                 alt={activePiece.title}
+                decoding="async"
                 className="h-full w-full object-cover max-h-[75vh]"
               />
 
