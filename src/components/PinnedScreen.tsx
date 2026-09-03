@@ -15,7 +15,12 @@ import BackgroundFX from './BackgroundFX'
    a luminous portal warp. Once inside, scrolling scrubs through the inner sections.
    Scrolling back up seamlessly reverses out of the screen back to the Hero pose. */
 
-const MODEL_URL = import.meta.env.BASE_URL + 'pc.glb'
+/* Phones get a lightweight robot computer (0.43 MB) instead of the full CRT
+   machine (3.9 MB) — same hero, fraction of the download/GPU cost. Desktop is
+   untouched and keeps the original pc.glb. */
+const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
+const MODEL_URL =
+  (import.meta.env.BASE_URL || '/') + (IS_TOUCH ? 'robot_compuer.glb' : 'pc.glb')
 
 const CAM_FOV = 50
 const CAM_REST_Z = 7.5
@@ -178,11 +183,23 @@ export default function PinnedScreen({
       ready: false,
     }
     let worldScale = 1
-  
+    /* On the phone robot, this is the screen/head — rotated by the gyroscope.
+       Null on desktop (unchanged behavior). */
+    let monitorHead: THREE.Object3D | null = null
+
     new GLTFLoader()
       .loadAsync(MODEL_URL)
       .then((gltf) => {
         const model = gltf.scene
+        /* On the touch robot, capture the head node so the gyro can move just
+           the screen. Touching nothing on desktop. */
+        if (IS_TOUCH) {
+          monitorHead = (
+            model.getObjectByName('computer_monitor') ||
+            model.getObjectByName('Monitor') ||
+            model
+          )
+        }
         const box = new THREE.Box3().setFromObject(model)
         const center = box.getCenter(new THREE.Vector3())
         const maxDim = Math.max(
@@ -682,6 +699,22 @@ export default function PinnedScreen({
           glassFx.style.setProperty('--crt-bleed', px(9))
           glassFx.style.setProperty('--crt-bleed-x', px(3))
         }
+      } else if (!isInside && renderer && dims.ready && W > 0 && H > 0) {
+        /* Phone robot: it has no CRT "Plane" glass mesh, so the quad projector
+           above can't run. Reveal/recede the page with a simple opacity + scale
+           fade tied to the same dolly, instead of welding it onto a screen. */
+        world.style.transform =
+          `scale(${(0.9 + 0.1 * eEnter).toFixed(3)}) translateY(${(14 * (1 - eEnter)).toFixed(2)}px)`
+        world.style.opacity = String(Math.min(1, eEnterRaw * 1.4))
+        world.style.borderRadius = `${(10 * (1 - eEnter)).toFixed(0)}px`
+        world.style.pointerEvents = isInside ? 'auto' : 'none'
+        world.style.filter = 'none'
+        world.style.removeProperty('mask-image')
+        world.style.removeProperty('-webkit-mask-image')
+        if (glassFx) {
+          glassFx.style.opacity = String(Math.max(0, 1 - eEnterRaw * 1.2))
+          glassFx.style.visibility = eEnterRaw < 0.85 ? 'visible' : 'hidden'
+        }
       }
 
       /* 4. Scrub through inner sections once inside */
@@ -742,6 +775,14 @@ export default function PinnedScreen({
       const visible =
         !document.hidden && !REDUCED && !insideNow
       if (renderer && dims.ready && visible) {
+        /* On the phone robot, steer just the screen/head with the gyroscope so
+           it reacts to how you hold the device. Desktop never touches this. */
+        if (IS_TOUCH && monitorHead) {
+          const g = gyro.sample()
+          monitorHead.rotation.x = g.tilt * 1.3
+          monitorHead.rotation.y = g.sway * 1.6
+          monitorHead.rotation.z = 0
+        }
         renderer.render(scene, camera)
       }
     }
