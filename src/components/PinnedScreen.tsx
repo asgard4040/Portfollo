@@ -532,6 +532,10 @@ export default function PinnedScreen({
     const quadV = [0, 1, 2, 3].map(() => new THREE.Vector3())
     const quadPx = [0, 1, 2, 3].map(() => ({ x: 0, y: 0 }))
 
+    /* smoothed gyro-driven head pose (last frame), so the screen glides to
+       you slowly instead of snapping/jerking with every sensor update */
+    const headCur = { x: 0, y: 0, z: 0 }
+
     /* Corners of the device-shaped rectangle that actually shows the page,
        fitted inside the glass: on a phone this is a portrait window, on a
        desktop it very nearly fills the glass. Returned in model space. */
@@ -610,10 +614,15 @@ export default function PinnedScreen({
           const swayFactor = 1 - eEnter
           const currentYaw = THREE.MathUtils.lerp(restYaw, targetYaw, eEnter)
           const idleYaw = idle ? Math.sin(performance.now() / 5000) * 0.08 * swayFactor : 0
-          const gyroYaw = idle ? gyro.sample().sway * 0.3 * swayFactor : 0
+          /* lighter, smoother gyro sway on the whole robot — the phone's screen
+             itself already glides smoothly via the head (in tick), so the body
+             only needs a faint accent */
+          const gyroFactor = IS_TOUCH ? 0.12 : 0.3
+          const gyroYaw = idle ? gyro.sample().sway * gyroFactor * swayFactor : 0
           spinner.rotation.y = currentYaw + idleYaw + gyroYaw
 
-          const gyroTilt = gyro.sample().tilt * 0.35 * swayFactor
+          const gyroFactorX = IS_TOUCH ? 0.14 : 0.35
+          const gyroTilt = gyro.sample().tilt * gyroFactorX * swayFactor
           spinner.rotation.x = THREE.MathUtils.lerp(-0.04, 0, eEnter) + gyroTilt
         } else {
           spinner.rotation.y = targetYaw
@@ -791,11 +800,18 @@ export default function PinnedScreen({
           /* gentle idle rock so the head is clearly alive even before the gyro
              grants permission — also a quick sanity check that the piece works */
           const t = performance.now() / 1000
-          /* the phone robot is tipped +90° about X, so the screen's "turn"
-             axis is the head's local Z (was Y before the tip) */
-          monitorHead.rotation.x = g.tilt * 1.1 + Math.sin(t * 1.4) * 0.05
-          monitorHead.rotation.z = g.sway * 1.2 + Math.sin(t * 1.1) * 0.04
-          monitorHead.rotation.y = Math.sin(t * 0.7) * 0.02
+          /* target pose: nod on the head's X (forward/back tilt) and turn on
+             its Y (left/right) — smoothed every frame so motion stays slow and
+             fluid regardless of how fast the gyro samples change */
+          const targetX = g.tilt * 0.6 + Math.sin(t * 1.2) * 0.04
+          const targetY = g.sway * 0.7 + Math.sin(t * 0.9) * 0.03
+          const targetZ = Math.sin(t * 0.5) * 0.015
+          headCur.x = THREE.MathUtils.lerp(headCur.x, targetX, 0.08)
+          headCur.y = THREE.MathUtils.lerp(headCur.y, targetY, 0.08)
+          headCur.z = THREE.MathUtils.lerp(headCur.z, targetZ, 0.08)
+          monitorHead.rotation.x = headCur.x
+          monitorHead.rotation.y = headCur.y
+          monitorHead.rotation.z = headCur.z
         }
         renderer.render(scene, camera)
       }
