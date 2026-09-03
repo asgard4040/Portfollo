@@ -6,7 +6,8 @@ import * as THREE from 'three'
    is armed lazily on the first tap. Uses refs — no React re-renders. */
 
 export function useGyroscope() {
-  const gyro = useRef<{ beta: number; gamma: number; dispose?: () => void }>({
+  const gyro = useRef<{ alpha: number; beta: number; gamma: number; dispose?: () => void }>({
+    alpha: 0,
     beta: 0,
     gamma: 0,
   })
@@ -16,8 +17,9 @@ export function useGyroscope() {
   const attach = () => {
     if (disposed.current || available.current) return
     const handler = (e: DeviceOrientationEvent) => {
-      gyro.current.beta = typeof e.beta === 'number' ? e.beta : 0
-      gyro.current.gamma = typeof e.gamma === 'number' ? e.gamma : 0
+      gyro.current.alpha = typeof e.alpha === 'number' ? e.alpha : gyro.current.alpha
+      gyro.current.beta = typeof e.beta === 'number' ? e.beta : gyro.current.beta
+      gyro.current.gamma = typeof e.gamma === 'number' ? e.gamma : gyro.current.gamma
     }
     window.addEventListener('deviceorientation', handler)
     available.current = true
@@ -71,6 +73,9 @@ export function useGyroscope() {
     sample: () => ({
       sway: THREE.MathUtils.clamp(((gyro.current.gamma - 0) / 45) * 0.9, -0.9, 0.9),
       tilt: THREE.MathUtils.clamp(((gyro.current.beta - 45) / 40) * 0.5, -0.5, 0.55),
+      /* rotation around the vertical axis (compass direction) — the most
+         natural way people turn a phone, so the head should follow it */
+      turn: THREE.MathUtils.clamp(((gyro.current.alpha - 0) / 90) * 0.9, -0.9, 0.9),
     }),
     dispose: () => {
       disposed.current = true

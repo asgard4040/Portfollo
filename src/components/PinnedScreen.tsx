@@ -779,9 +779,12 @@ export default function PinnedScreen({
            it reacts to how you hold the device. Desktop never touches this. */
         if (IS_TOUCH && monitorHead) {
           const g = gyro.sample()
-          monitorHead.rotation.x = g.tilt * 1.3
-          monitorHead.rotation.y = g.sway * 1.6
-          monitorHead.rotation.z = 0
+          /* gentle idle rock so the head is clearly alive even before the gyro
+             grants permission — also a quick sanity check that the piece works */
+          const t = performance.now() / 1000
+          monitorHead.rotation.x = g.tilt * 1.1 + Math.sin(t * 1.4) * 0.05
+          monitorHead.rotation.y = g.sway * 1.2 + Math.sin(t * 1.1) * 0.04
+          monitorHead.rotation.z = Math.sin(t * 0.7) * 0.02
         }
         renderer.render(scene, camera)
       }
