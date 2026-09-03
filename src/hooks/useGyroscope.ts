@@ -52,20 +52,25 @@ export function useGyroscope() {
       }
     }
 
-    /* Re-arm on any gesture: iOS needs a user gesture for the permission
-       prompt, and it must fire inside one. Listen to pointer/touch/scroll so
-       the very first interaction (which is often a scroll on mobile) works. */
+    /* Re-arm on any real gesture: iOS only grants motion permission inside a
+       user gesture (pointer/touch/click), and the FIRST in-gesture request is
+       the one that matters. Crucially, we must NOT request on mount — outside
+       a gesture iOS silently ignores/fails it, which can block later calls.
+       `scroll` is not a valid gesture for the prompt, so it is left out here. */
     const arm = () => request()
     window.addEventListener('pointerdown', arm)
-    window.addEventListener('touchstart', arm)
-    window.addEventListener('scroll', arm, { passive: true })
-    /* Some Android WebViews deliver events without any gesture; try once. */
-    request()
+    window.addEventListener('touchstart', arm, { passive: true })
+    window.addEventListener('touchend', arm, { passive: true })
+    window.addEventListener('click', arm)
+
+    /* No permission API (e.g. Android Chrome/WebView): just attach now. */
+    if (!needsRequest) attach()
 
     return () => {
       window.removeEventListener('pointerdown', arm)
       window.removeEventListener('touchstart', arm)
-      window.removeEventListener('scroll', arm)
+      window.removeEventListener('touchend', arm)
+      window.removeEventListener('click', arm)
     }
   }, [])
 
