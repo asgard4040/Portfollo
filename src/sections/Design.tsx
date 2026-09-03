@@ -13,8 +13,6 @@ export default function Design() {
   const [extractedPalette, setExtractedPalette] = useState<string[] | null>(null)
   const [copiedHex, setCopiedHex] = useState<string | null>(null)
 
-  // Touch swipe support for mobile photo carousel
-  const touchStartX = useRef<number | null>(null)
 
   const allPieces = useMemo(() => {
     return content.designPieces && content.designPieces.length > 0
@@ -130,41 +128,50 @@ export default function Design() {
     setTimeout(() => setCopiedHex(null), 1500)
   }
 
-  // Next / Prev photo handlers
-  const handlePrevPhoto = (e?: React.MouseEvent | React.TouchEvent) => {
+  // Touch swipe support for mobile photo carousel
+  const touchStartX = useRef<number | null>(null)
+  const touchStartY = useRef<number | null>(null)
+
+  // Next / Prev photo handlers (strictly cycles photos within the current piece)
+  const handlePrevPhoto = (e?: React.MouseEvent) => {
+    e?.preventDefault()
     e?.stopPropagation()
     if (pieceImages.length > 1) {
       setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : pieceImages.length - 1))
-    } else {
-      const idx = activeIndex > 0 ? activeIndex - 1 : fullList.length - 1
-      setActivePiece(fullList[idx])
     }
   }
 
-  const handleNextPhoto = (e?: React.MouseEvent | React.TouchEvent) => {
+  const handleNextPhoto = (e?: React.MouseEvent) => {
+    e?.preventDefault()
     e?.stopPropagation()
     if (pieceImages.length > 1) {
       setActiveImageIndex((prev) => (prev < pieceImages.length - 1 ? prev + 1 : 0))
-    } else {
-      const idx = activeIndex < fullList.length - 1 ? activeIndex + 1 : 0
-      setActivePiece(fullList[idx])
     }
   }
 
   // Touch handlers for mobile swipe
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
   }
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null) return
+    if (touchStartX.current === null || touchStartY.current === null) return
     const diffX = e.changedTouches[0].clientX - touchStartX.current
+    const diffY = e.changedTouches[0].clientY - touchStartY.current
     touchStartX.current = null
-    if (Math.abs(diffX) > 40) {
+    touchStartY.current = null
+
+    // Ignore if touched directly on a control button or thumbnail
+    if ((e.target as HTMLElement).closest('button')) return
+
+    if (pieceImages.length > 1 && Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY) * 1.2) {
       if (diffX < 0) {
-        handleNextPhoto()
+        // Swiped left -> Next photo
+        setActiveImageIndex((prev) => (prev < pieceImages.length - 1 ? prev + 1 : 0))
       } else {
-        handlePrevPhoto()
+        // Swiped right -> Previous photo
+        setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : pieceImages.length - 1))
       }
     }
   }
@@ -309,53 +316,45 @@ export default function Design() {
               className="surface relative z-10 my-auto flex w-full max-w-5xl max-h-[86vh] flex-col overflow-y-auto shadow-paper-lg transition-all duration-300 md:flex-row md:overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Left: Artwork Display with object-contain to show entire artwork */}
+              {/* Left: Artwork Display with 100% full view of the image */}
               <div
-                className="relative flex-1 bg-night flex flex-col items-center justify-center overflow-hidden min-h-[280px] md:min-h-[520px] p-4 sm:p-6 pt-6 sm:pt-6 select-none"
+                className="relative flex-1 bg-night flex flex-col items-center justify-center p-3 sm:p-6 select-none overflow-hidden min-h-[340px] md:min-h-[560px]"
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}
               >
-                <div className="relative w-full flex-1 flex items-center justify-center min-h-0">
+                <div className="relative w-full h-full flex-1 flex items-center justify-center">
                   <img
                     src={currentImageUrl}
                     alt={`${activePiece.title} - Image ${activeImageIndex + 1}`}
                     decoding="async"
-                    className="h-full w-full object-contain max-h-[48vh] md:max-h-[68vh] rounded-btn shadow-md mt-2 sm:mt-0 transition-all duration-300 pointer-events-none"
+                    className="w-auto h-auto max-w-full max-h-[64vh] sm:max-h-[72vh] md:max-h-[82vh] object-contain rounded-btn shadow-md transition-all duration-300"
                   />
 
-                  {/* Left & Right Navigation Arrows for cycling photos on phone and desktop */}
-                  {(pieceImages.length > 1 || fullList.length > 1) && (
+                  {/* Left & Right Navigation Arrows for cycling photos (ONLY when piece has multiple photos) */}
+                  {pieceImages.length > 1 && (
                     <>
                       <button
                         type="button"
                         onClick={handlePrevPhoto}
-                        onTouchEnd={(e) => {
-                          e.stopPropagation()
-                          handlePrevPhoto()
-                        }}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 z-30 h-10 w-10 sm:h-9 sm:w-9 flex items-center justify-center rounded-full bg-black/60 text-white border border-white/30 shadow-lg backdrop-blur-md hover:bg-black/80 hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                        aria-label={pieceImages.length > 1 ? "Previous photo" : "Previous artwork"}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 z-30 h-11 w-11 sm:h-10 sm:w-10 flex items-center justify-center rounded-full bg-black/70 text-white border border-white/40 shadow-xl backdrop-blur-md hover:bg-black/90 hover:scale-110 active:scale-95 transition-all cursor-pointer select-none"
+                        aria-label="Previous photo"
                       >
-                        ‹
+                        <span className="text-2xl font-bold leading-none select-none">‹</span>
                       </button>
                       <button
                         type="button"
                         onClick={handleNextPhoto}
-                        onTouchEnd={(e) => {
-                          e.stopPropagation()
-                          handleNextPhoto()
-                        }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 z-30 h-10 w-10 sm:h-9 sm:w-9 flex items-center justify-center rounded-full bg-black/60 text-white border border-white/30 shadow-lg backdrop-blur-md hover:bg-black/80 hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                        aria-label={pieceImages.length > 1 ? "Next photo" : "Next artwork"}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 z-30 h-11 w-11 sm:h-10 sm:w-10 flex items-center justify-center rounded-full bg-black/70 text-white border border-white/40 shadow-xl backdrop-blur-md hover:bg-black/90 hover:scale-110 active:scale-95 transition-all cursor-pointer select-none"
+                        aria-label="Next photo"
                       >
-                        ›
+                        <span className="text-2xl font-bold leading-none select-none">›</span>
                       </button>
                     </>
                   )}
 
                   {/* Image Counter Badge when piece has multiple images */}
                   {pieceImages.length > 1 && (
-                    <span className="absolute bottom-2 right-2 chip chip-strong text-[11px] font-mono shadow-md backdrop-blur-sm bg-night/80 text-paper z-20">
+                    <span className="absolute bottom-2 right-2 chip chip-strong text-[11px] font-mono shadow-md backdrop-blur-sm bg-night/85 text-paper z-20">
                       {activeImageIndex + 1} / {pieceImages.length}
                     </span>
                   )}
