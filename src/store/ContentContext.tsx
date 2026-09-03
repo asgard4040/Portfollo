@@ -72,7 +72,18 @@ function mapDbContent(db: DbContent): SiteContent {
   }
 
   if (db.nav.length) c.nav = db.nav.map((n) => ({ label: n.label, href: n.href }))
-  if (db.social.length) c.social = db.social.map((s) => ({ label: s.label, href: s.href }))
+  if (db.social.length) {
+    const list = db.social.map((s) => ({ label: s.label, href: s.href }))
+    const waItem = list.find((s) => s.label.toLowerCase().includes('whatsapp') || s.href.includes('wa.me'))
+    if (waItem) {
+      if (!waItem.href || waItem.href === 'https://wa.me/' || waItem.href === '#') {
+        waItem.href = 'https://wa.me/9647850086597'
+      }
+    } else {
+      list.unshift({ label: 'WhatsApp', href: 'https://wa.me/9647850086597' })
+    }
+    c.social = list
+  }
   if (db.codeSkills.length) c.codeSkills = db.codeSkills.map((s) => ({ name: s.name, note: s.note ?? undefined }))
   if (db.designSkills.length) c.designSkills = db.designSkills.map((s) => ({ name: s.name, note: s.note ?? undefined }))
   if (db.tools.length) c.tools = db.tools.map((t) => t.name)

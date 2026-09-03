@@ -3,6 +3,7 @@ import Reveal from '../components/Reveal'
 import SectionHeading from '../components/SectionHeading'
 import { Paperclip, KnobMark } from '../components/Doodles'
 import { socialIcon } from '../components/social'
+import { IconWhatsApp } from '../components/icons'
 import { useContent } from '../store/ContentContext'
 import { supabase } from '../utils/supabase/client'
 import { isSupabaseConfigured } from '../utils/supabase/client'
@@ -89,13 +90,25 @@ export default function Contact() {
           <div className="paper relative p-5 sm:p-10">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <p className="font-hand text-2xl text-ink-faint">leave a note…</p>
-              <a
-                href="mailto:aliemadnajm.iq@gmail.com"
-                className="font-mono text-xs text-ink-faint hover:text-ink transition-colors flex items-center gap-1.5"
-              >
-                <span>aliemadnajm.iq@gmail.com</span>
-                <span>↗</span>
-              </a>
+              <div className="flex items-center gap-3 flex-wrap">
+                <a
+                  href="https://wa.me/9647850086597"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-mono text-xs text-ink-faint hover:text-ink transition-colors flex items-center gap-1.5"
+                >
+                  <IconWhatsApp className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>+964 785 008 6597</span>
+                  <span>↗</span>
+                </a>
+                <a
+                  href="mailto:aliemadnajm.iq@gmail.com"
+                  className="font-mono text-xs text-ink-faint hover:text-ink transition-colors flex items-center gap-1.5"
+                >
+                  <span>aliemadnajm.iq@gmail.com</span>
+                  <span>↗</span>
+                </a>
+              </div>
             </div>
 
             {/* contact form → saves to Supabase */}

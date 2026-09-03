@@ -1,6 +1,5 @@
-import { IconSparkle, IconArrowUpRight, IconPencil } from './icons'
+import { IconSparkle, IconArrowUpRight } from './icons'
 import { socialIcon } from './social'
-import { openDashboard } from './Dashboard'
 import { useContent } from '../store/ContentContext'
 
 export default function Footer() {
@@ -13,15 +12,6 @@ export default function Footer() {
           <span>© {new Date().getFullYear()} {content.profile.name || 'Ali Imad'}</span>
           <IconSparkle className="h-3.5 w-3.5" />
           <span>make the web feel handmade</span>
-          <button
-            type="button"
-            onClick={openDashboard}
-            className="btn btn-outline btn-icon btn-sm btn-round ml-1"
-            aria-label="Open site editor (Ctrl+Shift+E)"
-            title="Site editor — Ctrl/⌘+Shift+E"
-          >
-            <IconPencil className="h-3 w-3" />
-          </button>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {content.social.map((l) => {

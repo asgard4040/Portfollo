@@ -29,8 +29,8 @@ export const navItems: NavItem[] = [
 ]
 
 export const social: SocialLink[] = [
+  { label: 'WhatsApp', href: 'https://wa.me/9647850086597' },
   { label: 'Instagram', href: 'https://instagram.com/' },
-  { label: 'WhatsApp', href: 'https://wa.me/' },
   { label: 'Github', href: 'https://github.com' },
   { label: 'Behance', href: 'https://behance.net' },
   { label: 'Email', href: 'mailto:aliemadnajm.iq@gmail.com' },
