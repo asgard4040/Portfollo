@@ -300,7 +300,7 @@ export function IconX({ className }: IconProps) {
 export function IconMenu({ className }: IconProps) {
   return (
     <Base className={className}>
-      <path d="M4 7h16M4 12h16M4 17h9" />
+      <path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" strokeWidth="2.2" />
     </Base>
   )
 }

@@ -142,15 +142,15 @@ export default function Navigation() {
               <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
-                className="btn btn-ghost btn-icon btn-sm btn-round text-ink md:hidden"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-ink hover:bg-paper-2 active:scale-95 transition-all md:hidden -mr-1"
                 aria-label={open ? 'Close menu' : 'Open menu'}
                 aria-expanded={open}
                 aria-controls="mobile-menu"
               >
                 {open ? (
-                  <IconX className="h-6 w-6" />
+                  <IconX className="h-7 w-7" />
                 ) : (
-                  <IconMenu className="h-6 w-6" />
+                  <IconMenu className="h-7 w-7" />
                 )}
               </button>
             </div>
@@ -182,10 +182,10 @@ export default function Navigation() {
               <button
                 type="button"
                 onClick={close}
-                className="btn btn-outline btn-icon btn-sm btn-round"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-line bg-paper text-ink hover:bg-paper-2 active:scale-95 transition-all"
                 aria-label="Close menu"
               >
-                <IconX className="h-5 w-5" />
+                <IconX className="h-6 w-6" />
               </button>
             </div>
 
